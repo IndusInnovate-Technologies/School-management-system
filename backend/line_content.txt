@@ -1,0 +1,1 @@
+﻿                    clean_class_name = self.applying_class.replace("Class ", "").strip()

@@ -1,0 +1,94 @@
+--- USERS ---
+User: super, ID: e04f09b3-2f6c-42ea-b8ac-94d50e397e11, Role: super_admin
+User: sushil, ID: f1adc11b-64a2-488b-b4e8-1626a558dd88, Role: super_admin
+User: praneeth.b, ID: da6993d7-3352-42f2-b48d-4f04fb1fda89, Role: student_parent
+User: sairam, ID: 77d412bb-5521-4fe1-8557-b55befb70564, Role: management_admin
+User: Buchireddy, ID: 65c5ee1b-bcf6-4f86-ba15-ca24eff4936c, Role: management_admin
+User: harika.k, ID: ae974c7c-e260-45fc-a238-db56ade4e25a, Role: student_parent
+User: nandu.G, ID: f1ca7ee8-7e5b-471a-9541-3f672fcb2918, Role: student_parent
+User: tinku, ID: 878ab54b-8aca-486f-bc0f-f569c6ba3cb2, Role: teacher
+User: Akhilsai, ID: ce9f94bc-7745-4315-a1fa-240d59356963, Role: teacher
+User: rakesh, ID: 08bc4119-8667-403a-af39-bd0f9b590625, Role: teacher
+User: sushil1, ID: 0e825ac3-162c-49a4-9689-739e3cde647c, Role: student_parent
+User: teacher, ID: 2c6e13f5-0e93-4b78-9ecf-ae1b3584a567, Role: teacher
+User: vamshi, ID: 65ba8aad-81c9-41d0-870d-a5f97cdcb99f, Role: student_parent
+User: govindu, ID: c8e6fefe-12da-4c64-9104-f2d18e6ddc7d, Role: teacher
+User: king, ID: 067d925f-71a7-4dcb-84a0-1dd17ee2e1ad, Role: student_parent
+User: indus, ID: 01de8711-7ef4-4655-be7e-a1d6e2c28552, Role: management_admin
+User: raosushil, ID: 750cd205-e6c0-47b6-8aae-1fc557a3f7e3, Role: student_parent
+User: suresh, ID: 53ed6eca-454d-48bf-93fb-85d27f032eff, Role: student_parent
+User: rajesh, ID: ef8dfbf9-c592-4fab-98f9-68374d144cb0, Role: student_parent
+User: krishnaveni, ID: e6952611-478b-4dd4-9eea-7d146e05a380, Role: student_parent
+User: kavitha, ID: bb9170dc-6621-4c3e-a0f1-d94b83d63d41, Role: teacher
+
+--- TEACHERS ---
+Teacher: Tinku kumar, User: tinku
+  Is Class Teacher: False
+  Class Assigned (String): None
+  Linked 'Class' objects: ['Class 1', 'Class 1', 'Class 2', 'Class 2', 'Class 3', 'Class 3', 'Class 4', 'Class 4', 'Class 5', 'Class 5', 'Class 6', 'Class 6', 'Class 7', 'Class 7', 'Class 8', 'Class 8', 'Class 9', 'Class 9', 'Class 10', 'Class 10']
+Teacher: Vamshi Krishna, User: No User
+  Is Class Teacher: False
+  Class Assigned (String): None
+  Linked 'Class' objects: None
+Teacher: Sanjay Verma, User: No User
+  Is Class Teacher: False
+  Class Assigned (String): None
+  Linked 'Class' objects: None
+Teacher: Venkat Ramana, User: No User
+  Is Class Teacher: False
+  Class Assigned (String): None
+  Linked 'Class' objects: None
+Teacher: Sushil Rao, User: No User
+  Is Class Teacher: False
+  Class Assigned (String): None
+  Linked 'Class' objects: None
+Teacher: Govindu H, User: govindu
+  Is Class Teacher: False
+  Class Assigned (String): None
+  Linked 'Class' objects: None
+Teacher: Rakesh k, User: rakesh
+  Is Class Teacher: False
+  Class Assigned (String): None
+  Linked 'Class' objects: None
+Teacher: sanjay kumar, User: No User
+  Is Class Teacher: False
+  Class Assigned (String): None
+  Linked 'Class' objects: None
+Teacher: bunty None, User: No User
+  Is Class Teacher: True
+  Class Assigned (String): Grade 9
+  Linked 'Class' objects: None
+Teacher: AkhilSai T, User: Akhilsai
+  Is Class Teacher: True
+  Class Assigned (String): Grade 12
+  Linked 'Class' objects: None
+Teacher: kavitha krishna, User: kavitha
+  Is Class Teacher: False
+  Class Assigned (String): None
+  Linked 'Class' objects: None
+Teacher: teacher teacher, User: teacher
+  Is Class Teacher: True
+  Class Assigned (String): Class 1
+  Linked 'Class' objects: None
+
+--- CLASSES ---
+Class: Class 1 A, Teacher: Tinku
+Class: Class 1 B, Teacher: Tinku
+Class: Class 2 A, Teacher: Tinku
+Class: Class 2 B, Teacher: Tinku
+Class: Class 3 A, Teacher: Tinku
+Class: Class 3 B, Teacher: Tinku
+Class: Class 4 A, Teacher: Tinku
+Class: Class 4 B, Teacher: Tinku
+Class: Class 5 A, Teacher: Tinku
+Class: Class 5 B, Teacher: Tinku
+Class: Class 6 A, Teacher: Tinku
+Class: Class 6 B, Teacher: Tinku
+Class: Class 7 A, Teacher: Tinku
+Class: Class 7 B, Teacher: Tinku
+Class: Class 8 A, Teacher: Tinku
+Class: Class 8 B, Teacher: Tinku
+Class: Class 9 A, Teacher: Tinku
+Class: Class 9 B, Teacher: Tinku
+Class: Class 10 A, Teacher: Tinku
+Class: Class 10 B, Teacher: Tinku

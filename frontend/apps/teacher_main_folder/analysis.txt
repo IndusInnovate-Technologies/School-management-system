@@ -1,0 +1,279 @@
+Analyzing teacher-profile.dart...                               
+
+   info - The file name 'teacher-profile.dart' isn't a lower_case_with_underscores identifier - lib\teacher-profile.dart:1:1 - file_names
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teacher-profile.dart:5:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teacher-profile.dart:6:8 - depend_on_referenced_packages
+warning - The declaration '<unnamed>' isn't referenced - lib\teacher-profile.dart:91:7 - unused_element
+  error - Missing concrete implementation of 'abstract class State<T extends StatefulWidget> with Diagnosticable.build' - lib\teacher-profile.dart:91:7 - non_abstract_class_inherits_abstract_member
+   info - The private field _currentPassword could be 'final' - lib\teacher-profile.dart:158:10 - prefer_final_fields
+warning - The value of the field '_currentPassword' isn't used - lib\teacher-profile.dart:158:10 - unused_field
+   info - The private field _newPassword could be 'final' - lib\teacher-profile.dart:159:10 - prefer_final_fields
+warning - The value of the field '_newPassword' isn't used - lib\teacher-profile.dart:159:10 - unused_field
+   info - The private field _confirmPassword could be 'final' - lib\teacher-profile.dart:160:10 - prefer_final_fields
+warning - The value of the field '_confirmPassword' isn't used - lib\teacher-profile.dart:160:10 - unused_field
+   info - The private field _obscureCurrent could be 'final' - lib\teacher-profile.dart:161:8 - prefer_final_fields
+warning - The value of the field '_obscureCurrent' isn't used - lib\teacher-profile.dart:161:8 - unused_field
+   info - The private field _obscureNew could be 'final' - lib\teacher-profile.dart:162:8 - prefer_final_fields
+warning - The value of the field '_obscureNew' isn't used - lib\teacher-profile.dart:162:8 - unused_field
+   info - The private field _obscureConfirm could be 'final' - lib\teacher-profile.dart:163:8 - prefer_final_fields
+warning - The value of the field '_obscureConfirm' isn't used - lib\teacher-profile.dart:163:8 - unused_field
+warning - The declaration '_loadTeacherData' isn't referenced - lib\teacher-profile.dart:171:16 - unused_element
+  error - Undefined name 'data' - lib\teacher-profile.dart:229:28 - undefined_identifier
+  error - Expected a class member - lib\teacher-profile.dart:230:5 - expected_class_member
+  error - Expected an identifier - lib\teacher-profile.dart:230:8 - missing_identifier
+   info - Missing type annotation - lib\teacher-profile.dart:230:9 - strict_top_level_inference
+  error - Expected to find ')' - lib\teacher-profile.dart:230:24 - expected_token
+  error - Expected a class member - lib\teacher-profile.dart:232:7 - expected_class_member
+  error - Expected an identifier - lib\teacher-profile.dart:232:12 - missing_identifier
+  error - Methods must have an explicit list of parameters - lib\teacher-profile.dart:232:12 - missing_method_parameters
+  error - The name 'middleName' is already defined - lib\teacher-profile.dart:237:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:237:5 - missing_const_final_var_or_type
+  error - The name 'religion' is already defined - lib\teacher-profile.dart:238:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:238:5 - missing_const_final_var_or_type
+  error - The name 'subCaste' is already defined - lib\teacher-profile.dart:239:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:239:5 - missing_const_final_var_or_type
+  error - The name 'addressCity' is already defined - lib\teacher-profile.dart:240:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:240:5 - missing_const_final_var_or_type
+  error - The name 'addressState' is already defined - lib\teacher-profile.dart:241:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:241:5 - missing_const_final_var_or_type
+  error - The name 'addressCountry' is already defined - lib\teacher-profile.dart:242:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:242:5 - missing_const_final_var_or_type
+  error - The name 'postalCode' is already defined - lib\teacher-profile.dart:243:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:243:5 - missing_const_final_var_or_type
+  error - The name 'profilePhotoId' is already defined - lib\teacher-profile.dart:244:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:244:5 - missing_const_final_var_or_type
+  error - The name 'schoolId' is already defined - lib\teacher-profile.dart:245:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:245:5 - missing_const_final_var_or_type
+  error - The name 'userId' is already defined - lib\teacher-profile.dart:246:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:246:5 - missing_const_final_var_or_type
+  error - Undefined name 'data' - lib\teacher-profile.dart:246:14 - undefined_identifier
+  error - The name 'createdBy' is already defined - lib\teacher-profile.dart:247:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:247:5 - missing_const_final_var_or_type
+  error - The name 'createdAt' is already defined - lib\teacher-profile.dart:248:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:248:5 - missing_const_final_var_or_type
+  error - Undefined name 'data' - lib\teacher-profile.dart:248:17 - undefined_identifier
+  error - The name 'updatedAt' is already defined - lib\teacher-profile.dart:249:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:249:5 - missing_const_final_var_or_type
+  error - Undefined name 'data' - lib\teacher-profile.dart:249:17 - undefined_identifier
+  error - The name 'employmentStatus' is already defined - lib\teacher-profile.dart:250:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:250:5 - missing_const_final_var_or_type
+  error - The instance member 'isActive' can't be accessed in an initializer - lib\teacher-profile.dart:250:24 - implicit_this_reference_in_initializer
+  error - The name 'isClassTeacher' is already defined - lib\teacher-profile.dart:251:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:251:5 - missing_const_final_var_or_type
+  error - The instance member 'classTeacherOfSectionId' can't be accessed in an initializer - lib\teacher-profile.dart:251:22 - implicit_this_reference_in_initializer
+  error - The name 'availableFrom' is already defined - lib\teacher-profile.dart:252:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:252:5 - missing_const_final_var_or_type
+  error - The name 'availableTo' is already defined - lib\teacher-profile.dart:253:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:253:5 - missing_const_final_var_or_type
+  error - The name 'workDays' is already defined - lib\teacher-profile.dart:254:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:254:5 - missing_const_final_var_or_type
+  error - The name 'notes' is already defined - lib\teacher-profile.dart:255:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:255:5 - missing_const_final_var_or_type
+  error - The name 'assignmentsEnabled' is already defined - lib\teacher-profile.dart:256:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:256:5 - missing_const_final_var_or_type
+  error - The name 'examsEnabled' is already defined - lib\teacher-profile.dart:257:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:257:5 - missing_const_final_var_or_type
+  error - The name 'parentMessagesEnabled' is already defined - lib\teacher-profile.dart:258:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:258:5 - missing_const_final_var_or_type
+  error - The name 'attendanceAlertsEnabled' is already defined - lib\teacher-profile.dart:259:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:259:5 - missing_const_final_var_or_type
+  error - The name 'gradeUpdatesEnabled' is already defined - lib\teacher-profile.dart:260:5 - duplicate_definition
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\teacher-profile.dart:260:5 - missing_const_final_var_or_type
+  error - Undefined name 'teacherId' - lib\teacher-profile.dart:264:5 - undefined_identifier
+  error - Undefined name 'schoolId' - lib\teacher-profile.dart:265:5 - undefined_identifier
+  error - Undefined name 'userId' - lib\teacher-profile.dart:266:5 - undefined_identifier
+  error - Undefined name 'createdBy' - lib\teacher-profile.dart:267:5 - undefined_identifier
+  error - Undefined name 'createdAt' - lib\teacher-profile.dart:268:5 - undefined_identifier
+  error - Undefined name 'updatedAt' - lib\teacher-profile.dart:269:5 - undefined_identifier
+  error - Undefined name 'employeeNo' - lib\teacher-profile.dart:271:5 - undefined_identifier
+  error - Undefined name 'firstName' - lib\teacher-profile.dart:272:5 - undefined_identifier
+  error - Undefined name 'middleName' - lib\teacher-profile.dart:273:5 - undefined_identifier
+  error - Undefined name 'lastName' - lib\teacher-profile.dart:274:5 - undefined_identifier
+  error - Undefined name 'profileName' - lib\teacher-profile.dart:275:5 - undefined_identifier
+  error - Undefined name 'email' - lib\teacher-profile.dart:276:5 - undefined_identifier
+  error - Undefined name 'mobile' - lib\teacher-profile.dart:277:5 - undefined_identifier
+  error - Undefined name 'dateOfBirth' - lib\teacher-profile.dart:278:5 - undefined_identifier
+  error - Undefined name 'gender' - lib\teacher-profile.dart:279:5 - undefined_identifier
+  error - Undefined name 'religion' - lib\teacher-profile.dart:280:5 - undefined_identifier
+  error - Undefined name 'subCaste' - lib\teacher-profile.dart:281:5 - undefined_identifier
+  error - Undefined name 'bloodGroup' - lib\teacher-profile.dart:282:5 - undefined_identifier
+  error - Undefined name 'nationality' - lib\teacher-profile.dart:283:5 - undefined_identifier
+  error - Undefined name 'addressFull' - lib\teacher-profile.dart:284:5 - undefined_identifier
+  error - Undefined name 'addressCity' - lib\teacher-profile.dart:285:5 - undefined_identifier
+  error - Undefined name 'addressState' - lib\teacher-profile.dart:286:5 - undefined_identifier
+  error - Undefined name 'addressCountry' - lib\teacher-profile.dart:287:5 - undefined_identifier
+  error - Undefined name 'postalCode' - lib\teacher-profile.dart:288:5 - undefined_identifier
+  error - Undefined name 'profilePhotoId' - lib\teacher-profile.dart:289:5 - undefined_identifier
+  error - Undefined name 'profilePhotoUrl' - lib\teacher-profile.dart:290:5 - undefined_identifier
+  error - Undefined name 'qualification' - lib\teacher-profile.dart:292:5 - undefined_identifier
+  error - Undefined name 'subjectsSpecialization' - lib\teacher-profile.dart:293:5 - undefined_identifier
+  error - Undefined name 'department' - lib\teacher-profile.dart:294:5 - undefined_identifier
+  error - Undefined name 'departmentId' - lib\teacher-profile.dart:295:5 - undefined_identifier
+  error - Undefined name 'designation' - lib\teacher-profile.dart:296:5 - undefined_identifier
+  error - Undefined name 'joiningDate' - lib\teacher-profile.dart:297:5 - undefined_identifier
+  error - Undefined name 'employmentStatus' - lib\teacher-profile.dart:298:5 - undefined_identifier
+  error - Undefined name 'isClassTeacher' - lib\teacher-profile.dart:299:5 - undefined_identifier
+  error - Undefined name 'classTeacherOfSectionId' - lib\teacher-profile.dart:300:5 - undefined_identifier
+  error - Undefined name 'primaryRoomId' - lib\teacher-profile.dart:301:5 - undefined_identifier
+  error - Undefined name 'availableFrom' - lib\teacher-profile.dart:302:5 - undefined_identifier
+  error - Undefined name 'availableTo' - lib\teacher-profile.dart:303:5 - undefined_identifier
+  error - Undefined name 'workDays' - lib\teacher-profile.dart:304:5 - undefined_identifier
+  error - Undefined name 'emergencyContactName' - lib\teacher-profile.dart:306:5 - undefined_identifier
+  error - Undefined name 'emergencyContactRelation' - lib\teacher-profile.dart:307:5 - undefined_identifier
+  error - Undefined name 'emergencyContactPhone' - lib\teacher-profile.dart:308:5 - undefined_identifier
+  error - Undefined name 'notes' - lib\teacher-profile.dart:310:5 - undefined_identifier
+  error - Undefined name 'isActive' - lib\teacher-profile.dart:311:5 - undefined_identifier
+  error - Undefined name 'assignmentsEnabled' - lib\teacher-profile.dart:313:5 - undefined_identifier
+  error - Undefined name 'examsEnabled' - lib\teacher-profile.dart:314:5 - undefined_identifier
+  error - Undefined name 'parentMessagesEnabled' - lib\teacher-profile.dart:315:5 - undefined_identifier
+  error - Undefined name 'attendanceAlertsEnabled' - lib\teacher-profile.dart:316:5 - undefined_identifier
+  error - Undefined name 'gradeUpdatesEnabled' - lib\teacher-profile.dart:317:5 - undefined_identifier
+  error - Invalid context for 'super' invocation - lib\teacher-profile.dart:322:5 - super_in_invalid_context
+  error - The function '_loadTeacherData' isn't defined - lib\teacher-profile.dart:324:5 - undefined_function
+  error - Undefined name '_subjectController' - lib\teacher-profile.dart:329:5 - undefined_identifier
+  error - Invalid context for 'super' invocation - lib\teacher-profile.dart:330:5 - super_in_invalid_context
+  error - Undefined name 'context' - lib\teacher-profile.dart:337:16 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:354:7 - undefined_function
+  error - Undefined name '_profileImage' - lib\teacher-profile.dart:355:9 - undefined_identifier
+  error - Undefined name '_isLoading' - lib\teacher-profile.dart:368:9 - undefined_identifier
+  error - Undefined name '_error' - lib\teacher-profile.dart:391:9 - undefined_identifier
+  error - Undefined name '_error' - lib\teacher-profile.dart:414:20 - undefined_identifier
+  error - Undefined name '_loadTeacherData' - lib\teacher-profile.dart:417:28 - undefined_identifier
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:472:60 - deprecated_member_use
+  error - Undefined name 'firstName' - lib\teacher-profile.dart:548:32 - undefined_identifier
+  error - Undefined name 'firstName' - lib\teacher-profile.dart:548:50 - undefined_identifier
+  error - Undefined name 'middleName' - lib\teacher-profile.dart:549:33 - undefined_identifier
+  error - Undefined name 'middleName' - lib\teacher-profile.dart:549:52 - undefined_identifier
+  error - Undefined name 'lastName' - lib\teacher-profile.dart:550:31 - undefined_identifier
+  error - Undefined name 'lastName' - lib\teacher-profile.dart:550:48 - undefined_identifier
+  error - Undefined name 'employeeNo' - lib\teacher-profile.dart:551:37 - undefined_identifier
+  error - Undefined name 'employeeNo' - lib\teacher-profile.dart:551:56 - undefined_identifier
+  error - Undefined name 'dateOfBirth' - lib\teacher-profile.dart:554:48 - undefined_identifier
+  error - Undefined name 'dateOfBirth' - lib\teacher-profile.dart:554:68 - undefined_identifier
+  error - Undefined name 'gender' - lib\teacher-profile.dart:555:28 - undefined_identifier
+  error - Undefined name 'gender' - lib\teacher-profile.dart:555:43 - undefined_identifier
+  error - Undefined name 'bloodGroup' - lib\teacher-profile.dart:556:33 - undefined_identifier
+  error - Undefined name 'bloodGroup' - lib\teacher-profile.dart:556:52 - undefined_identifier
+  error - Undefined name 'nationality' - lib\teacher-profile.dart:557:33 - undefined_identifier
+  error - Undefined name 'nationality' - lib\teacher-profile.dart:557:53 - undefined_identifier
+  error - Undefined name 'email' - lib\teacher-profile.dart:563:27 - undefined_identifier
+  error - Undefined name 'email' - lib\teacher-profile.dart:563:41 - undefined_identifier
+  error - Undefined name 'mobile' - lib\teacher-profile.dart:564:28 - undefined_identifier
+  error - Undefined name 'mobile' - lib\teacher-profile.dart:564:43 - undefined_identifier
+  error - Undefined name 'addressCity' - lib\teacher-profile.dart:567:26 - undefined_identifier
+  error - Undefined name 'addressCity' - lib\teacher-profile.dart:567:46 - undefined_identifier
+  error - Undefined name 'addressState' - lib\teacher-profile.dart:568:27 - undefined_identifier
+  error - Undefined name 'addressState' - lib\teacher-profile.dart:568:48 - undefined_identifier
+  error - Undefined name 'addressCountry' - lib\teacher-profile.dart:569:29 - undefined_identifier
+  error - Undefined name 'addressCountry' - lib\teacher-profile.dart:569:52 - undefined_identifier
+  error - Undefined name 'postalCode' - lib\teacher-profile.dart:570:33 - undefined_identifier
+  error - Undefined name 'postalCode' - lib\teacher-profile.dart:570:52 - undefined_identifier
+  error - Undefined name 'addressFull' - lib\teacher-profile.dart:572:36 - undefined_identifier
+  error - Undefined name 'addressFull' - lib\teacher-profile.dart:572:56 - undefined_identifier
+  error - Undefined name 'religion' - lib\teacher-profile.dart:579:30 - undefined_identifier
+  error - Undefined name 'religion' - lib\teacher-profile.dart:579:47 - undefined_identifier
+  error - Undefined name 'subCaste' - lib\teacher-profile.dart:580:31 - undefined_identifier
+  error - Undefined name 'subCaste' - lib\teacher-profile.dart:580:48 - undefined_identifier
+  error - Undefined name 'department' - lib\teacher-profile.dart:599:32 - undefined_identifier
+  error - Undefined name 'department' - lib\teacher-profile.dart:599:51 - undefined_identifier
+  error - Undefined name 'designation' - lib\teacher-profile.dart:600:33 - undefined_identifier
+  error - Undefined name 'designation' - lib\teacher-profile.dart:600:53 - undefined_identifier
+  error - Undefined name 'qualification' - lib\teacher-profile.dart:601:35 - undefined_identifier
+  error - Undefined name 'qualification' - lib\teacher-profile.dart:601:57 - undefined_identifier
+  error - Undefined name 'joiningDate' - lib\teacher-profile.dart:602:46 - undefined_identifier
+  error - Undefined name 'joiningDate' - lib\teacher-profile.dart:602:66 - undefined_identifier
+  error - Undefined name 'primaryRoomId' - lib\teacher-profile.dart:608:37 - undefined_identifier
+  error - Undefined name 'primaryRoomId' - lib\teacher-profile.dart:608:59 - undefined_identifier
+  error - Undefined name 'classTeacherOfSectionId' - lib\teacher-profile.dart:609:46 - undefined_identifier
+  error - Undefined name 'classTeacherOfSectionId' - lib\teacher-profile.dart:609:78 - undefined_identifier
+  error - Undefined name 'departmentId' - lib\teacher-profile.dart:610:35 - undefined_identifier
+  error - Undefined name 'departmentId' - lib\teacher-profile.dart:610:56 - undefined_identifier
+  error - Undefined name 'employmentStatus' - lib\teacher-profile.dart:611:39 - undefined_identifier
+  error - Undefined name 'employmentStatus' - lib\teacher-profile.dart:611:64 - undefined_identifier
+  error - Undefined name 'teacherId' - lib\teacher-profile.dart:616:33 - undefined_identifier
+  error - Undefined name 'teacherId' - lib\teacher-profile.dart:616:51 - undefined_identifier
+  error - Undefined name 'userId' - lib\teacher-profile.dart:617:30 - undefined_identifier
+  error - Undefined name 'userId' - lib\teacher-profile.dart:617:45 - undefined_identifier
+  error - Undefined name 'isActive' - lib\teacher-profile.dart:618:50 - undefined_identifier
+  error - Undefined name 'isActive' - lib\teacher-profile.dart:618:78 - undefined_identifier
+  error - Undefined name 'subjectsSpecialization' - lib\teacher-profile.dart:627:33 - undefined_identifier
+  error - Undefined name 'subjectsSpecialization' - lib\teacher-profile.dart:629:29 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:630:34 - undefined_function
+  error - Undefined name 'subjectsSpecialization' - lib\teacher-profile.dart:630:49 - undefined_identifier
+  error - Undefined name '_subjectController' - lib\teacher-profile.dart:635:23 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:639:15 - undefined_function
+  error - Undefined name 'subjectsSpecialization' - lib\teacher-profile.dart:639:30 - undefined_identifier
+  error - Undefined name '_subjectController' - lib\teacher-profile.dart:640:15 - undefined_identifier
+  error - Undefined name 'availableFrom' - lib\teacher-profile.dart:648:36 - undefined_identifier
+  error - Undefined name 'availableFrom' - lib\teacher-profile.dart:648:58 - undefined_identifier
+  error - Undefined name 'availableTo' - lib\teacher-profile.dart:649:34 - undefined_identifier
+  error - Undefined name 'availableTo' - lib\teacher-profile.dart:649:54 - undefined_identifier
+  error - Undefined name 'workDays' - lib\teacher-profile.dart:651:63 - undefined_identifier
+  error - Undefined name 'workDays' - lib\teacher-profile.dart:652:19 - undefined_identifier
+  error - Undefined name 'isClassTeacher' - lib\teacher-profile.dart:654:47 - undefined_identifier
+  error - Undefined name 'isClassTeacher' - lib\teacher-profile.dart:654:85 - undefined_identifier
+  error - Undefined name 'emergencyContactName' - lib\teacher-profile.dart:657:39 - undefined_identifier
+  error - Undefined name 'emergencyContactName' - lib\teacher-profile.dart:657:68 - undefined_identifier
+  error - Undefined name 'emergencyContactRelation' - lib\teacher-profile.dart:658:30 - undefined_identifier
+  error - Undefined name 'emergencyContactRelation' - lib\teacher-profile.dart:658:63 - undefined_identifier
+  error - Undefined name 'emergencyContactPhone' - lib\teacher-profile.dart:659:27 - undefined_identifier
+  error - Undefined name 'emergencyContactPhone' - lib\teacher-profile.dart:659:57 - undefined_identifier
+  error - Undefined name 'notes' - lib\teacher-profile.dart:662:29 - undefined_identifier
+  error - Undefined name 'notes' - lib\teacher-profile.dart:662:43 - undefined_identifier
+  error - Undefined name 'assignmentsEnabled' - lib\teacher-profile.dart:681:11 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:682:18 - undefined_function
+  error - Undefined name 'assignmentsEnabled' - lib\teacher-profile.dart:682:33 - undefined_identifier
+  error - Undefined name 'examsEnabled' - lib\teacher-profile.dart:686:11 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:687:18 - undefined_function
+  error - Undefined name 'examsEnabled' - lib\teacher-profile.dart:687:33 - undefined_identifier
+  error - Undefined name 'parentMessagesEnabled' - lib\teacher-profile.dart:691:11 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:692:18 - undefined_function
+  error - Undefined name 'parentMessagesEnabled' - lib\teacher-profile.dart:692:33 - undefined_identifier
+  error - Undefined name 'attendanceAlertsEnabled' - lib\teacher-profile.dart:696:11 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:697:18 - undefined_function
+  error - Undefined name 'attendanceAlertsEnabled' - lib\teacher-profile.dart:697:33 - undefined_identifier
+  error - Undefined name 'gradeUpdatesEnabled' - lib\teacher-profile.dart:701:11 - undefined_identifier
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:702:18 - undefined_function
+  error - Undefined name 'gradeUpdatesEnabled' - lib\teacher-profile.dart:702:33 - undefined_identifier
+  error - Undefined name 'schoolId' - lib\teacher-profile.dart:729:32 - undefined_identifier
+  error - Undefined name 'createdBy' - lib\teacher-profile.dart:730:33 - undefined_identifier
+  error - Undefined name 'createdAt' - lib\teacher-profile.dart:731:33 - undefined_identifier
+  error - Undefined name 'updatedAt' - lib\teacher-profile.dart:732:38 - undefined_identifier
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:783:52 - deprecated_member_use
+  error - Undefined name '_profileImage' - lib\teacher-profile.dart:798:36 - undefined_identifier
+  error - Undefined name '_profileImage' - lib\teacher-profile.dart:798:70 - undefined_identifier
+  error - Undefined name '_profileImage' - lib\teacher-profile.dart:799:26 - undefined_identifier
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:815:51 - deprecated_member_use
+  error - Undefined name 'profileName' - lib\teacher-profile.dart:825:11 - undefined_identifier
+  error - Undefined name 'department' - lib\teacher-profile.dart:832:24 - undefined_identifier
+  error - Undefined name 'designation' - lib\teacher-profile.dart:834:24 - undefined_identifier
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:844:119 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:851:20 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:858:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:863:93 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:886:44 - deprecated_member_use
+   info - Unnecessary 'const' keyword - lib\teacher-profile.dart:902:17 - unnecessary_const
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:929:33 - deprecated_member_use
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:984:29 - undefined_function
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:1061:31 - undefined_function
+warning - The declaration '_passwordField' isn't referenced - lib\teacher-profile.dart:1073:10 - unused_element
+  error - The function 'setState' isn't defined - lib\teacher-profile.dart:1090:29 - undefined_function
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:1124:67 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\teacher-profile.dart:1135:9 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:1152:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:1170:44 - deprecated_member_use
+warning - The declaration '_title' isn't referenced - lib\teacher-profile.dart:1181:10 - unused_element
+  error - Undefined name 'mounted' - lib\teacher-profile.dart:1221:10 - undefined_identifier
+  error - Undefined name 'context' - lib\teacher-profile.dart:1223:16 - undefined_identifier
+  error - Undefined name 'context' - lib\teacher-profile.dart:1265:16 - undefined_identifier
+  error - Undefined name 'mounted' - lib\teacher-profile.dart:1341:30 - undefined_identifier
+  error - Undefined name 'mounted' - lib\teacher-profile.dart:1361:30 - undefined_identifier
+  error - Undefined name 'mounted' - lib\teacher-profile.dart:1379:30 - undefined_identifier
+  error - Invalid reference to 'this' expression - lib\teacher-profile.dart:1411:31 - invalid_reference_to_this
+  error - Invalid reference to 'this' expression - lib\teacher-profile.dart:1414:40 - invalid_reference_to_this
+  error - Undefined name 'mounted' - lib\teacher-profile.dart:1437:35 - undefined_identifier
+  error - Invalid reference to 'this' expression - lib\teacher-profile.dart:1438:46 - invalid_reference_to_this
+  error - Undefined name 'mounted' - lib\teacher-profile.dart:1448:32 - undefined_identifier
+  error - Invalid reference to 'this' expression - lib\teacher-profile.dart:1450:38 - invalid_reference_to_this
+  error - Expected a method, getter, setter or operator declaration - lib\teacher-profile.dart:1493:1 - expected_executable
+

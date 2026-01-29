@@ -1,0 +1,9 @@
+--- Debugging User 'venu' ---
+
+User: venu (ID: 60a9c687-16ad-479c-915a-0af7693ee303)
+  Teacher Profile: venu gopal (ID: NRK-011)
+    School ID: KAKP6878787878887
+    [Class Logic Check]
+      Filtering by school_id=KAKP6878787878887: found 52 classes
+    [Exam Logic Check]
+      Found 2 exams linked to this teacher:

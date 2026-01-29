@@ -1,0 +1,45 @@
+﻿.\venv\Scripts\python.
+exe : C:\Users\D-IT\De
+sktop\pp\backend\venv\
+Lib\site-packages\rest
+_framework_simplejwt\_
+_init__.py:1: 
+UserWarning: 
+pkg_resources is 
+deprecated as an API. 
+See https://setuptools
+.pypa.io/en/latest/pkg
+_resources.html. The 
+pkg_resources package 
+is slated for removal 
+as early as 
+2025-11-30. Refrain 
+from using this 
+package or pin to 
+Setuptools<81.
+At line:1 char:13
++ cd backend; .\venv\S
+cripts\python.exe 
+check_db_columns.py > 
+check_db_ ...
++             ~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (C:\Users\D   
+ -IT\D... Setuptoo    
+ls<81.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+  from pkg_resources 
+import 
+DistributionNotFound, 
+get_distribution
+Columns in 'teachers' table: ['joining_date', 'created_at', 'updated_at', 'department_id', 'user_id', 'address', 'blood_group', 'class_teacher_section_id', 'dob', 'email', 'emergency_contact', 'employee_no', 'first_name', 'gender', 'is_active', 'last_name', 'mobile_no', 'nationality', 'primary_room_id', 'qualification', 'subject_specialization', 'school_id', 'is_class_teacher', 'school_name', 'class_teacher_class', 'profile_photo', 'emergency_contact_relation', 'experience', 'salary', 'class_teacher_section', 'class_teacher_grade', 'marital_status', 'permanent_address']
+Columns in 'students' table: ['student_id', 'parent_name', 'parent_phone', 'created_at', 'updated_at', 'school_id', 'user_id', 'address', 'admission_number', 'applying_class', 'blood_group', 'category', 'date_of_birth', 'email', 'emergency_contact', 'gender', 'medical_information', 'previous_school', 'remarks', 'student_name', 'school_name', 'profile_photo', 'achievements', 'activities', 'leadership', 'participation', 'section', 'grade']
+Columns in 'new_admissions' table: ['student_name', 'parent_name', 'date_of_birth', 'gender', 'applying_class', 'address', 'category', 'status', 'admission_number', 'email', 'parent_phone', 'emergency_contact', 'medical_information', 'blood_group', 'previous_school', 'remarks', 'created_at', 'updated_at', 'student_id', 'password', 'school_id', 'section', 'grade']

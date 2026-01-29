@@ -1,0 +1,54 @@
+Starting generic population...
+Target School: Narayana School (ID: KAKP6878787878887)
+  [UPDATE SCHOOL] Nursery-A
+  [UPDATE SCHOOL] Nursery-B
+  [UPDATE SCHOOL] Nursery-C
+  [UPDATE SCHOOL] Nursery-D
+  [UPDATE SCHOOL] LKG-A
+  [UPDATE SCHOOL] LKG-B
+  [UPDATE SCHOOL] LKG-C
+  [UPDATE SCHOOL] LKG-D
+  [UPDATE SCHOOL] UKG-A
+  [UPDATE SCHOOL] UKG-B
+  [UPDATE SCHOOL] UKG-C
+  [UPDATE SCHOOL] UKG-D
+  [UPDATE SCHOOL] Class 1-A
+  [UPDATE SCHOOL] Class 1-C
+  [UPDATE SCHOOL] Class 1-D
+  [UPDATE SCHOOL] Class 2-A
+  [UPDATE SCHOOL] Class 2-B
+  [UPDATE SCHOOL] Class 2-C
+  [UPDATE SCHOOL] Class 2-D
+  [UPDATE SCHOOL] Class 3-A
+  [UPDATE SCHOOL] Class 3-B
+  [UPDATE SCHOOL] Class 3-C
+  [UPDATE SCHOOL] Class 3-D
+  [UPDATE SCHOOL] Class 4-A
+  [UPDATE SCHOOL] Class 4-B
+  [UPDATE SCHOOL] Class 4-C
+  [UPDATE SCHOOL] Class 4-D
+  [UPDATE SCHOOL] Class 5-A
+  [UPDATE SCHOOL] Class 5-C
+  [UPDATE SCHOOL] Class 5-D
+  [UPDATE SCHOOL] Class 6-A
+  [UPDATE SCHOOL] Class 6-B
+  [UPDATE SCHOOL] Class 6-C
+  [UPDATE SCHOOL] Class 6-D
+  [UPDATE SCHOOL] Class 7-A
+  [UPDATE SCHOOL] Class 7-B
+  [UPDATE SCHOOL] Class 7-C
+  [UPDATE SCHOOL] Class 7-D
+  [UPDATE SCHOOL] Class 8-A
+  [UPDATE SCHOOL] Class 8-B
+  [UPDATE SCHOOL] Class 8-C
+  [UPDATE SCHOOL] Class 8-D
+  [UPDATE SCHOOL] Class 9-A
+  [UPDATE SCHOOL] Class 9-B
+  [UPDATE SCHOOL] Class 9-C
+  [UPDATE SCHOOL] Class 9-D
+  [UPDATE SCHOOL] Class 10-A
+  [UPDATE SCHOOL] Class 10-B
+  [UPDATE SCHOOL] Class 10-D
+------------------------------
+Total: Created 0, Updated 49 classes for school Narayana School
+DONE_SUCCESS

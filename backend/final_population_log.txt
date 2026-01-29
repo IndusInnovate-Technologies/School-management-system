@@ -1,0 +1,57 @@
+Starting final population...
+Selected Teacher via User 'pandey': manish
+Target Teacher: manish pandey (ID: EMP-0090)
+  [CREATED] Nursery-A
+  [CREATED] Nursery-B
+  [CREATED] Nursery-C
+  [CREATED] Nursery-D
+  [CREATED] LKG-A
+  [CREATED] LKG-B
+  [CREATED] LKG-C
+  [CREATED] LKG-D
+  [CREATED] UKG-A
+  [CREATED] UKG-B
+  [CREATED] UKG-C
+  [CREATED] UKG-D
+  [RE-ASSIGN] Class 1-B (was chary krishna - NRK-010)
+  [CREATED] Class 1-C
+  [CREATED] Class 1-D
+  [CREATED] Class 2-A
+  [CREATED] Class 2-B
+  [CREATED] Class 2-C
+  [CREATED] Class 2-D
+  [CREATED] Class 3-A
+  [CREATED] Class 3-B
+  [CREATED] Class 3-C
+  [CREATED] Class 3-D
+  [CREATED] Class 4-A
+  [CREATED] Class 4-B
+  [CREATED] Class 4-C
+  [CREATED] Class 4-D
+  [CREATED] Class 5-A
+  [RE-ASSIGN] Class 5-B (was venu gopal - NRK-011)
+  [CREATED] Class 5-C
+  [CREATED] Class 5-D
+  [CREATED] Class 6-A
+  [CREATED] Class 6-B
+  [CREATED] Class 6-C
+  [CREATED] Class 6-D
+  [CREATED] Class 7-A
+  [CREATED] Class 7-B
+  [CREATED] Class 7-C
+  [CREATED] Class 7-D
+  [CREATED] Class 8-A
+  [CREATED] Class 8-B
+  [CREATED] Class 8-C
+  [CREATED] Class 8-D
+  [CREATED] Class 9-A
+  [CREATED] Class 9-B
+  [CREATED] Class 9-C
+  [CREATED] Class 9-D
+  [CREATED] Class 10-A
+  [CREATED] Class 10-B
+  [RE-ASSIGN] Class 10-C (was hussain keek - NRK-012)
+  [CREATED] Class 10-D
+------------------------------
+Total: Created 48, Re-assigned 3
+DONE_SUCCESS

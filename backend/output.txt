@@ -1,0 +1,86 @@
+--- USERS & TEACHER PROFILES ---
+User: sairam (PK: 77d412bb-5521-4fe1-8557-b55befb70564)
+  - No Teacher Profile
+User: tinku (PK: 878ab54b-8aca-486f-bc0f-f569c6ba3cb2)
+  - Teacher Profile Found: Tinku kumar - EMP-1999 (ID: EMP-1999)
+  - Assigned Classes: 20
+    - Class 1 A
+    - Class 1 B
+    - Class 2 A
+    - Class 2 B
+    - Class 3 A
+    - Class 3 B
+    - Class 4 A
+    - Class 4 B
+    - Class 5 A
+    - Class 5 B
+    - Class 6 A
+    - Class 6 B
+    - Class 7 A
+    - Class 7 B
+    - Class 8 A
+    - Class 8 B
+    - Class 9 A
+    - Class 9 B
+    - Class 10 A
+    - Class 10 B
+User: indus (PK: 01de8711-7ef4-4655-be7e-a1d6e2c28552)
+  - Teacher Profile Found: Indus Teacher - IND-TEACH-001 (ID: IND-TEACH-001)
+  - Assigned Classes: 15
+    - Grade 1 B
+    - Grade 2 A
+    - Grade 3 B
+    - Grade 4 A
+    - Grade 5 B
+    - Class 1 D
+    - Class 2 C
+    - Class 3 D
+    - Class 4 C
+    - Class 5 D
+    - Class 6 C
+    - Class 7 D
+    - Class 8 C
+    - Class 9 D
+    - Class 10 C
+
+--- ALL CLASSES ---
+Class: Class 1 A (Teacher: tinku)
+Class: Class 1 B (Teacher: tinku)
+Class: Class 2 A (Teacher: tinku)
+Class: Class 2 B (Teacher: tinku)
+Class: Class 3 A (Teacher: tinku)
+Class: Class 3 B (Teacher: tinku)
+Class: Class 4 A (Teacher: tinku)
+Class: Class 4 B (Teacher: tinku)
+Class: Class 5 A (Teacher: tinku)
+Class: Class 5 B (Teacher: tinku)
+Class: Class 6 A (Teacher: tinku)
+Class: Class 6 B (Teacher: tinku)
+Class: Class 7 A (Teacher: tinku)
+Class: Class 7 B (Teacher: tinku)
+Class: Class 8 A (Teacher: tinku)
+Class: Class 8 B (Teacher: tinku)
+Class: Class 9 A (Teacher: tinku)
+Class: Class 9 B (Teacher: tinku)
+Class: Class 10 A (Teacher: tinku)
+Class: Class 10 B (Teacher: tinku)
+Class: Grade 1 B (Teacher: indus)
+Class: Grade 2 A (Teacher: indus)
+Class: Grade 3 B (Teacher: indus)
+Class: Grade 4 A (Teacher: indus)
+Class: Grade 5 B (Teacher: indus)
+Class: Class 11 B (Teacher: pandey)
+Class: Class 12 A (Teacher: pandey)
+Class: Class 13 B (Teacher: pandey)
+Class: Class 14 A (Teacher: pandey)
+Class: Class 15 B (Teacher: pandey)
+Class: Class 1 D (Teacher: indus)
+Class: Class 2 C (Teacher: indus)
+Class: Class 3 D (Teacher: indus)
+Class: Class 4 C (Teacher: indus)
+Class: Class 5 D (Teacher: indus)
+Class: Class 6 C (Teacher: indus)
+Class: Class 7 D (Teacher: indus)
+Class: Class 8 C (Teacher: indus)
+Class: Class 9 D (Teacher: indus)
+Class: Class 10 C (Teacher: indus)

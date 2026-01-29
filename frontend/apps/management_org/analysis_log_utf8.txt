@@ -1,0 +1,447 @@
+﻿Analyzing management_org...                                     
+
+   info - The imported package 'core' isn't a dependency of the importing package - lib\activities.dart:4:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\activities.dart:5:8 - depend_on_referenced_packages
+warning - Unused import: 'main.dart' - lib\activities.dart:6:8 - unused_import
+   info - 'translate' is deprecated and shouldn't be used. Use translateByVector3, translateByVector4, or translateByDouble instead - lib\activities.dart:600:13 - deprecated_member_use
+  error - Expected to find ']' - lib\activities.dart:719:15 - expected_token
+warning - The declaration '_NavItem' isn't referenced - lib\activities.dart:781:7 - unused_element
+warning - A value for optional parameter 'onTap' isn't ever given - lib\activities.dart:790:10 - unused_element_parameter
+warning - A value for optional parameter 'isActive' isn't ever given - lib\activities.dart:791:10 - unused_element_parameter
+   info - The imported package 'core' isn't a dependency of the importing package - lib\add_event.dart:3:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\add_event.dart:4:8 - depend_on_referenced_packages
+warning - Unused import: 'dashboard.dart' - lib\add_event.dart:5:8 - unused_import
+warning - The value of the field '_timeController' isn't used - lib\add_event.dart:22:9 - unused_field
+warning - The value of the field '_selectedDate' isn't used - lib\add_event.dart:26:13 - unused_field
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\add_event.dart:480:49 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\add_event.dart:584:49 - deprecated_member_use
+   info - The file name 'add_newBus.dart' isn't a lower_case_with_underscores identifier - lib\add_newBus.dart:1:1 - file_names
+   info - The imported package 'core' isn't a dependency of the importing package - lib\add_newBus.dart:2:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\add_newBus.dart:3:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\add_newactivity.dart:3:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\add_newactivity.dart:4:8 - depend_on_referenced_packages
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\add_newactivity.dart:538:39 - deprecated_member_use
+   info - The imported package 'core' isn't a dependency of the importing package - lib\add_teacher.dart:6:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\add_teacher.dart:7:8 - depend_on_referenced_packages
+warning - The value of the field '_isLoadingDepartments' isn't used - lib\add_teacher.dart:60:8 - unused_field
+warning - The value of the local variable 'responseData' isn't used - lib\add_teacher.dart:313:13 - unused_local_variable
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\add_teacher.dart:818:57 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\add_teacher.dart:843:57 - deprecated_member_use
+   info - The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/services.dart' - lib\admissions.dart:5:8 - unnecessary_import
+warning - Unused import: 'package:image_picker/image_picker.dart' - lib\admissions.dart:6:8 - unused_import
+warning - Unused import: 'students.dart' - lib\admissions.dart:10:8 - unused_import
+warning - Unused import: 'teachers.dart' - lib\admissions.dart:11:8 - unused_import
+warning - Unused import: 'buses.dart' - lib\admissions.dart:12:8 - unused_import
+warning - Unused import: 'events.dart' - lib\admissions.dart:13:8 - unused_import
+warning - Unused import: 'notifications.dart' - lib\admissions.dart:14:8 - unused_import
+warning - Unused import: 'activities.dart' - lib\admissions.dart:15:8 - unused_import
+warning - Unused import: 'awards.dart' - lib\admissions.dart:16:8 - unused_import
+warning - Unused import: 'gallery.dart' - lib\admissions.dart:17:8 - unused_import
+warning - Unused import: 'calendar.dart' - lib\admissions.dart:18:8 - unused_import
+   info - The imported package 'core' isn't a dependency of the importing package - lib\admissions.dart:19:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\admissions.dart:20:8 - depend_on_referenced_packages
+warning - The value of the field '_editingAdmission' isn't used - lib\admissions.dart:170:14 - unused_field
+   info - Don't invoke 'print' in production code - lib\admissions.dart:344:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\admissions.dart:358:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\admissions.dart:367:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\admissions.dart:371:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\admissions.dart:401:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\admissions.dart:448:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\admissions.dart:451:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\admissions.dart:818:13 - avoid_print
+warning - The declaration '_buildNavItem' isn't referenced - lib\admissions.dart:941:10 - unused_element
+   info - 'translate' is deprecated and shouldn't be used. Use translateByVector3, translateByVector4, or translateByDouble instead - lib\admissions.dart:1450:13 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\admissions_form.dart:160:13 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\admissions_form.dart:188:13 - deprecated_member_use
+   info - The imported package 'http' isn't a dependency of the importing package - lib\awards.dart:8:8 - depend_on_referenced_packages
+   info - The imported package 'path' isn't a dependency of the importing package - lib\awards.dart:10:8 - depend_on_referenced_packages
+warning - Unused import: 'package:path/path.dart' - lib\awards.dart:10:8 - unused_import
+   info - 'dart:html' is deprecated and shouldn't be used. Use package:web and dart:js_interop instead - lib\awards.dart:12:1 - deprecated_member_use
+   info - Don't use web-only libraries outside Flutter web plugins - lib\awards.dart:12:1 - avoid_web_libraries_in_flutter
+   info - The imported package 'core' isn't a dependency of the importing package - lib\awards.dart:15:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\awards.dart:16:8 - depend_on_referenced_packages
+warning - The '!' will have no effect because the receiver can't be null - lib\awards.dart:650:72 - unnecessary_non_null_assertion
+warning - The operand can't be 'null', so the condition is always 'true' - lib\awards.dart:742:41 - unnecessary_null_comparison
+warning - The '!' will have no effect because the receiver can't be null - lib\awards.dart:746:64 - unnecessary_non_null_assertion
+warning - The declaration '_buildNavItem' isn't referenced - lib\awards.dart:1141:10 - unused_element
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\awards.dart:1371:25 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\awards.dart:1372:25 - deprecated_member_use
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\awards.dart:1385:25 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\awards.dart:1386:25 - deprecated_member_use
+warning - The declaration '_showAllNames' isn't referenced - lib\awards.dart:1656:8 - unused_element
+  error - Expected to find ']' - lib\awards.dart:1884:15 - expected_token
+warning - The value of the local variable 'anchor' isn't used - lib\awards.dart:2221:15 - unused_local_variable
+   info - Don't use 'BuildContext's across async gaps - lib\awards.dart:2226:30 - use_build_context_synchronously
+   info - 'translate' is deprecated and shouldn't be used. Use translateByVector3, translateByVector4, or translateByDouble instead - lib\awards.dart:2503:13 - deprecated_member_use
+warning - Unused import: 'main.dart' - lib\buses.dart:4:8 - unused_import
+   info - The imported package 'core' isn't a dependency of the importing package - lib\buses.dart:8:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\buses.dart:9:8 - depend_on_referenced_packages
+warning - Unused import: 'utils.dart' - lib\buses.dart:14:8 - unused_import
+warning - The declaration '_buildProfileImage' isn't referenced - lib\buses.dart:310:10 - unused_element
+warning - The declaration '_buildProfileDetails' isn't referenced - lib\buses.dart:355:10 - unused_element
+warning - The declaration '_buildRouteMap' isn't referenced - lib\buses.dart:386:10 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\buses.dart:562:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\buses.dart:570:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\buses.dart:674:44 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\buses.dart:681:44 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\buses.dart:688:42 - use_build_context_synchronously
+   info - 'translate' is deprecated and shouldn't be used. Use translateByVector3, translateByVector4, or translateByDouble instead - lib\buses.dart:1122:13 - deprecated_member_use
+warning - The declaration '_NavItem' isn't referenced - lib\buses.dart:1392:7 - unused_element
+warning - A value for optional parameter 'onTap' isn't ever given - lib\buses.dart:1401:10 - unused_element_parameter
+warning - A value for optional parameter 'isActive' isn't ever given - lib\buses.dart:1402:10 - unused_element_parameter
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\buses.dart:1900:45 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\buses.dart:1917:43 - use_build_context_synchronously
+   info - The imported package 'core' isn't a dependency of the importing package - lib\calendar.dart:4:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\calendar.dart:5:8 - depend_on_referenced_packages
+warning - The value of the field '_formKey' isn't used - lib\calendar.dart:182:9 - unused_field
+warning - The value of the field '_titleController' isn't used - lib\calendar.dart:183:31 - unused_field
+warning - The value of the field '_descController' isn't used - lib\calendar.dart:184:31 - unused_field
+warning - The value of the field '_locController' isn't used - lib\calendar.dart:185:31 - unused_field
+warning - The value of the field '_orgController' isn't used - lib\calendar.dart:186:31 - unused_field
+warning - The value of the field '_dateController' isn't used - lib\calendar.dart:187:31 - unused_field
+warning - The value of the field '_startController' isn't used - lib\calendar.dart:188:31 - unused_field
+warning - The value of the field '_endController' isn't used - lib\calendar.dart:189:31 - unused_field
+warning - The value of the field '_selectedType' isn't used - lib\calendar.dart:191:11 - unused_field
+warning - The value of the field '_selectedStartTime' isn't used - lib\calendar.dart:193:14 - unused_field
+warning - The value of the field '_selectedEndTime' isn't used - lib\calendar.dart:194:14 - unused_field
+warning - The value of the field '_searchController' isn't used - lib\calendar.dart:196:31 - unused_field
+   info - The private field _searchQuery could be 'final' - lib\calendar.dart:197:10 - prefer_final_fields
+warning - The value of the field '_searchQuery' isn't used - lib\calendar.dart:197:10 - unused_field
+warning - The value of the field '_filterType' isn't used - lib\calendar.dart:198:11 - unused_field
+warning - The value of the field '_filterMonth' isn't used - lib\calendar.dart:199:8 - unused_field
+   info - The private field _sortBy could be 'final' - lib\calendar.dart:200:10 - prefer_final_fields
+warning - The value of the field '_sortBy' isn't used - lib\calendar.dart:200:10 - unused_field
+   info - The private field _sortAscending could be 'final' - lib\calendar.dart:201:8 - prefer_final_fields
+warning - The value of the field '_sortAscending' isn't used - lib\calendar.dart:201:8 - unused_field
+warning - The declaration '_buildUserInfo' isn't referenced - lib\calendar.dart:205:10 - unused_element
+warning - The declaration '_updateEvent' isn't referenced - lib\calendar.dart:336:8 - unused_element
+warning - The declaration '_deleteEvent' isn't referenced - lib\calendar.dart:345:8 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\calendar.dart:430:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\calendar.dart:810:58 - deprecated_member_use
+warning - The declaration '_NavItem' isn't referenced - lib\calendar.dart:858:7 - unused_element
+warning - A value for optional parameter 'onTap' isn't ever given - lib\calendar.dart:867:10 - unused_element_parameter
+warning - A value for optional parameter 'isActive' isn't ever given - lib\calendar.dart:868:10 - unused_element_parameter
+warning - A value for optional parameter 'event' isn't ever given - lib\calendar.dart:909:10 - unused_element_parameter
+warning - The declaration '_DayEventsDialog' isn't referenced - lib\calendar.dart:1130:7 - unused_element
+warning - Unused import: 'package:google_fonts/google_fonts.dart' - lib\campus_life.dart:4:8 - unused_import
+   info - The imported package 'core' isn't a dependency of the importing package - lib\campus_life.dart:9:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\campus_life.dart:10:8 - depend_on_referenced_packages
+warning - The declaration '_exportData' isn't referenced - lib\campus_life.dart:611:8 - unused_element
+warning - The declaration '_logout' isn't referenced - lib\campus_life.dart:636:8 - unused_element
+warning - A value for optional parameter 'onTap' isn't ever given - lib\campus_life.dart:1214:10 - unused_element_parameter
+warning - A value for optional parameter 'isActive' isn't ever given - lib\campus_life.dart:1215:10 - unused_element_parameter
+   info - The imported package 'core' isn't a dependency of the importing package - lib\dashboard.dart:3:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\dashboard.dart:4:8 - depend_on_referenced_packages
+warning - The value of the field '_isLoading' isn't used - lib\dashboard.dart:34:8 - unused_field
+   info - 'translate' is deprecated and shouldn't be used. Use translateByVector3, translateByVector4, or translateByDouble instead - lib\dashboard.dart:916:15 - deprecated_member_use
+   info - 'translate' is deprecated and shouldn't be used. Use translateByVector3, translateByVector4, or translateByDouble instead - lib\dashboard.dart:2025:38 - deprecated_member_use
+   info - The imported package 'core' isn't a dependency of the importing package - lib\departments.dart:5:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\departments.dart:6:8 - depend_on_referenced_packages
+   info - The variable name 'established_date_str' isn't a lowerCamelCase identifier - lib\departments.dart:76:15 - non_constant_identifier_names
+warning - The value of the local variable 'gradient' isn't used - lib\departments.dart:399:11 - unused_local_variable
+  error - Expected to find ']' - lib\departments.dart:1240:13 - expected_token
+   info - The imported package 'core' isn't a dependency of the importing package - lib\edit_activity.dart:3:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\edit_activity.dart:4:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\edit_bus.dart:3:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\edit_bus.dart:4:8 - depend_on_referenced_packages
+warning - The value of the field '_isLoading' isn't used - lib\edit_bus.dart:42:8 - unused_field
+warning - The value of the local variable 'gradient' isn't used - lib\edit_bus.dart:340:11 - unused_local_variable
+   info - The imported package 'core' isn't a dependency of the importing package - lib\edit_event.dart:3:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\edit_event.dart:4:8 - depend_on_referenced_packages
+warning - Unused import: 'dashboard.dart' - lib\edit_event.dart:5:8 - unused_import
+   info - The private field _selectedStatus could be 'final' - lib\edit_event.dart:26:10 - prefer_final_fields
+warning - The value of the field '_statuses' isn't used - lib\edit_event.dart:39:22 - unused_field
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\edit_event.dart:490:49 - deprecated_member_use
+   info - The imported package 'core' isn't a dependency of the importing package - lib\edit_student.dart:7:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\edit_teacher.dart:6:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\edit_teacher.dart:7:8 - depend_on_referenced_packages
+   info - Constructors in '@immutable' classes should be declared as 'const' - lib\edit_teacher.dart:480:3 - prefer_const_constructors_in_immutables
+warning - The declaration '_NavItem' isn't referenced - lib\edit_teacher.dart:1029:7 - unused_element
+warning - A value for optional parameter 'onTap' isn't ever given - lib\edit_teacher.dart:1038:10 - unused_element_parameter
+warning - A value for optional parameter 'isActive' isn't ever given - lib\edit_teacher.dart:1039:10 - unused_element_parameter
+   info - The imported package 'core' isn't a dependency of the importing package - lib\events.dart:5:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\events.dart:6:8 - depend_on_referenced_packages
+warning - Unused import: 'main.dart' - lib\events.dart:7:8 - unused_import
+warning - The value of the field '_statusUpdateTimer' isn't used - lib\events.dart:80:10 - unused_field
+warning - The declaration '_canEdit' isn't referenced - lib\events.dart:88:12 - unused_element
+warning - The declaration '_computeEventStatus' isn't referenced - lib\events.dart:251:10 - unused_element
+   info - 'translate' is deprecated and shouldn't be used. Use translateByVector3, translateByVector4, or translateByDouble instead - lib\events.dart:744:13 - deprecated_member_use
+warning - The declaration '_computeEventStatus' isn't referenced - lib\events.dart:898:10 - unused_element
+warning - The declaration '_NavItem' isn't referenced - lib\events.dart:994:7 - unused_element
+warning - A value for optional parameter 'onTap' isn't ever given - lib\events.dart:1003:10 - unused_element_parameter
+warning - A value for optional parameter 'isActive' isn't ever given - lib\events.dart:1004:10 - unused_element_parameter
+warning - Unused import: 'package:main_login/main.dart' - lib\examinations.dart:4:8 - unused_import
+warning - Unused import: 'main.dart' - lib\examinations.dart:5:8 - unused_import
+   info - The imported package 'core' isn't a dependency of the importing package - lib\examinations.dart:7:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\examinations.dart:8:8 - depend_on_referenced_packages
+   info - Don't invoke 'print' in production code - lib\examinations.dart:265:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\examinations.dart:373:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\examinations.dart:376:7 - avoid_print
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\examinations.dart:610:46 - use_build_context_synchronously
+warning - The declaration '_showStudentsDialog' isn't referenced - lib\examinations.dart:1221:8 - unused_element
+   info - Unnecessary use of multiple underscores - lib\examinations.dart:1332:43 - unnecessary_underscores
+warning - The declaration '_subjectOptions' isn't referenced - lib\examinations.dart:1396:36 - unused_element
+warning - Unused import: 'main.dart' - lib\fees.dart:5:8 - unused_import
+   info - The imported package 'core' isn't a dependency of the importing package - lib\fees.dart:7:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\fees.dart:8:8 - depend_on_referenced_packages
+warning - The value of the field '_selectedStudentIdForFilter' isn't used - lib\fees.dart:116:11 - unused_field
+   info - Function literals shouldn't be passed to 'forEach' - lib\fees.dart:175:29 - avoid_function_literals_in_foreach_calls
+   info - Don't invoke 'print' in production code - lib\fees.dart:196:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:333:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:448:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:468:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:475:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:476:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:477:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:481:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:483:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:486:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:490:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:501:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:508:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:515:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:517:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:524:19 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:531:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:538:19 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:543:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:551:11 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:554:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:563:13 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:568:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:569:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:581:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:582:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:603:7 - avoid_print
+   info - The 'if' statement could be replaced by a null-aware assignment - lib\fees.dart:613:11 - prefer_conditional_assignment
+   info - The 'if' statement could be replaced by a null-aware assignment - lib\fees.dart:676:17 - prefer_conditional_assignment
+   info - The 'if' statement could be replaced by a null-aware assignment - lib\fees.dart:715:11 - prefer_conditional_assignment
+   info - Don't invoke 'print' in production code - lib\fees.dart:750:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:753:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:754:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:755:7 - avoid_print
+warning - The declaration '_feeToJson' isn't referenced - lib\fees.dart:760:24 - unused_element
+   info - Don't invoke 'print' in production code - lib\fees.dart:898:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:928:11 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\fees.dart:935:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\fees.dart:968:9 - use_build_context_synchronously
+warning - The operand can't be 'null', so the condition is always 'true' - lib\fees.dart:1071:45 - unnecessary_null_comparison
+warning - The operand can't be 'null', so the condition is always 'true' - lib\fees.dart:1096:51 - unnecessary_null_comparison
+   info - Don't invoke 'print' in production code - lib\fees.dart:1160:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1323:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1324:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1325:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1337:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1338:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1339:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1341:19 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1344:21 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1345:21 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1346:21 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1348:23 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1352:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1357:21 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1360:23 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1361:23 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1362:23 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1367:23 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1368:23 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1369:23 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1370:23 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1371:23 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1373:25 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1379:25 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1383:27 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1384:27 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1385:27 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1386:27 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1387:27 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1390:25 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1408:23 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1413:21 - avoid_print
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\fees.dart:1419:42 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\fees.dart:1428:42 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\fees.dart:1437:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:1438:17 - avoid_print
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\fees.dart:1440:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\fees.dart:1558:70 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\fees.dart:1818:68 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\fees.dart:1828:68 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\fees.dart:1838:66 - use_build_context_synchronously
+   info - Unnecessary braces in a string interpolation - lib\fees.dart:1989:81 - unnecessary_brace_in_string_interps
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\fees.dart:2014:70 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\fees.dart:2024:70 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\fees.dart:2034:68 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\fees.dart:2052:41 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2053:41 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2057:43 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2058:43 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2059:43 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2060:43 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2061:43 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2066:47 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2067:47 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2068:47 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2070:47 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2071:47 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2074:47 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2084:49 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2093:49 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2098:43 - avoid_print
+   info - Don't invoke 'print' in production code - lib\fees.dart:2099:43 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fees.dart:2245:32 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\fees.dart:2529:15 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\fees.dart:2555:21 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\fees.dart:2601:21 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\fees.dart:2798:19 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\fees.dart:2824:19 - deprecated_member_use
+warning - The declaration '_StudentSearchSection' isn't referenced - lib\fees.dart:3026:7 - unused_element
+   info - Unnecessary use of 'toList' in a spread - lib\fees.dart:3172:22 - unnecessary_to_list_in_spreads
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fees.dart:3373:22 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fees.dart:3375:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fees.dart:3387:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fees.dart:3527:37 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread - lib\fees.dart:3821:18 - unnecessary_to_list_in_spreads
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fees.dart:4007:43 - deprecated_member_use
+   info - The imported package 'shared_preferences' isn't a dependency of the importing package - lib\financial_dashboard.dart:2:8 - depend_on_referenced_packages
+   info - Parameters ''key' and 'child'' could be super parameters - lib\financial_dashboard.dart:11:9 - use_super_parameters
+   info - Don't invoke 'print' in production code - lib\financial_dashboard.dart:37:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\financial_dashboard.dart:44:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\financial_dashboard.dart:51:13 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\financial_dashboard.dart:167:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\financial_dashboard.dart:181:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\financial_dashboard.dart:186:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\financial_dashboard.dart:276:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\financial_dashboard.dart:278:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\financial_dashboard.dart:280:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\financial_dashboard.dart:298:43 - deprecated_member_use
+   info - The imported package 'core' isn't a dependency of the importing package - lib\financial_profiles.dart:2:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\financial_profiles.dart:3:8 - depend_on_referenced_packages
+warning - Unused import: 'financial_dashboard.dart' - lib\financial_profiles.dart:6:8 - unused_import
+   info - Parameter 'key' could be a super parameter - lib\financial_profiles.dart:11:9 - use_super_parameters
+   info - Use interpolation to compose strings and values - lib\financial_profiles.dart:379:47 - prefer_interpolation_to_compose_strings
+   info - Don't use 'BuildContext's across async gaps - lib\financial_profiles.dart:421:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\financial_profiles.dart:426:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\financial_profiles.dart:434:28 - use_build_context_synchronously
+   info - The imported package 'core' isn't a dependency of the importing package - lib\gallery.dart:6:8 - depend_on_referenced_packages
+   info - The imported package 'http' isn't a dependency of the importing package - lib\gallery.dart:10:8 - depend_on_referenced_packages
+warning - Unused import: 'package:main_login/main.dart' - lib\gallery.dart:11:8 - unused_import
+warning - Unused import: 'main.dart' - lib\gallery.dart:12:8 - unused_import
+   info - Don't invoke 'print' in production code - lib\gallery.dart:292:17 - avoid_print
+   info - Don't invoke 'print' in production code - lib\gallery.dart:412:13 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\gallery.dart:417:32 - use_build_context_synchronously
+   info - The imported package 'core' isn't a dependency of the importing package - lib\main.dart:2:8 - depend_on_referenced_packages
+warning - Unused import: 'package:main_login/main.dart' - lib\notifications.dart:3:8 - unused_import
+   info - The imported package 'core' isn't a dependency of the importing package - lib\notifications.dart:4:8 - depend_on_referenced_packages
+warning - Unused import: 'main.dart' - lib\notifications.dart:5:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\notifications.dart:212:46 - deprecated_member_use
+warning - The declaration '_ActionsBar' isn't referenced - lib\notifications.dart:709:7 - unused_element
+   info - The imported package 'core' isn't a dependency of the importing package - lib\pages\support_request_page.dart:5:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\pages\support_request_page.dart:6:8 - depend_on_referenced_packages
+warning - Unused import: '../management_routes.dart' - lib\pages\support_request_page.dart:8:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\support_request_page.dart:280:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\support_request_page.dart:392:22 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\support_request_page.dart:394:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\support_request_page.dart:429:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\support_request_page.dart:431:77 - deprecated_member_use
+   info - Unnecessary 'const' keyword - lib\pages\support_request_page.dart:490:13 - unnecessary_const
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\support_request_page.dart:509:33 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\pages\support_request_page.dart:525:17 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\support_request_page.dart:613:50 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\pages\support_request_page.dart:721:28 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\pages\support_request_page.dart:874:35 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\pages\support_request_page.dart:896:39 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\pages\support_request_page.dart:896:43 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\pages\support_request_page.dart:1094:35 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\pages\support_request_page.dart:1135:47 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\pages\support_request_page.dart:1135:51 - unnecessary_underscores
+warning - Duplicate import - lib\routes.dart:32:8 - duplicate_import
+warning - Duplicate import - lib\routes.dart:33:8 - duplicate_import
+warning - Two keys in a map literal shouldn't be equal - lib\routes.dart:57:5 - equal_keys_in_map
+warning - Two keys in a map literal shouldn't be equal - lib\routes.dart:58:5 - equal_keys_in_map
+warning - Two keys in a map literal shouldn't be equal - lib\routes.dart:59:5 - equal_keys_in_map
+   info - Parameter 'key' could be a super parameter - lib\rti_act.dart:4:9 - use_super_parameters
+   info - The imported package 'http' isn't a dependency of the importing package - lib\services\api_service.dart:1:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\services\api_service.dart:3:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\students.dart:4:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\students.dart:5:8 - depend_on_referenced_packages
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\students.dart:705:36 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\students.dart:706:34 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\students.dart:711:42 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\students.dart:719:42 - use_build_context_synchronously
+warning - A value for optional parameter 'key' isn't ever given - lib\students.dart:1137:11 - unused_element_parameter
+   info - 'translate' is deprecated and shouldn't be used. Use translateByVector3, translateByVector4, or translateByDouble instead - lib\students.dart:1160:40 - deprecated_member_use
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teacher_timetable.dart:2:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teacher_timetable.dart:3:8 - depend_on_referenced_packages
+warning - Unused import: 'widgets/school_profile_header.dart' - lib\teacher_timetable.dart:5:8 - unused_import
+   info - Parameter 'key' could be a super parameter - lib\teacher_timetable.dart:15:9 - use_super_parameters
+   info - The private field _selectedEntryIds could be 'final' - lib\teacher_timetable.dart:33:12 - prefer_final_fields
+   info - Unnecessary braces in a string interpolation - lib\teacher_timetable.dart:893:63 - unnecessary_brace_in_string_interps
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\teacher_timetable.dart:1585:39 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\teacher_timetable.dart:1653:19 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\teacher_timetable.dart:1699:25 - deprecated_member_use
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teachers.dart:4:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teachers.dart:5:8 - depend_on_referenced_packages
+warning - The declaration '_canEdit' isn't referenced - lib\teachers.dart:186:12 - unused_element
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\teachers.dart:246:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\teachers.dart:253:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\teachers.dart:259:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\teachers.dart:262:40 - use_build_context_synchronously
+   info - 'translate' is deprecated and shouldn't be used. Use translateByVector3, translateByVector4, or translateByDouble instead - lib\teachers.dart:836:13 - deprecated_member_use
+warning - The declaration '_NavItem' isn't referenced - lib\teachers.dart:1058:7 - unused_element
+warning - A value for optional parameter 'onTap' isn't ever given - lib\teachers.dart:1067:10 - unused_element_parameter
+warning - A value for optional parameter 'isActive' isn't ever given - lib\teachers.dart:1068:10 - unused_element_parameter
+   info - The imported package 'core' isn't a dependency of the importing package - lib\unified_bus_form.dart:2:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\unified_bus_form.dart:3:8 - depend_on_referenced_packages
+warning - Unused import: 'utils.dart' - lib\unified_bus_form.dart:5:8 - unused_import
+   info - The private field _isSuccess could be 'final' - lib\unified_bus_form.dart:81:8 - prefer_final_fields
+warning - The value of the field '_isSuccess' isn't used - lib\unified_bus_form.dart:81:8 - unused_field
+   info - The variable name '_StopCard' isn't a lowerCamelCase identifier - lib\unified_bus_form.dart:808:10 - non_constant_identifier_names
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\unified_bus_form.dart:1298:33 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\unified_bus_form.dart:1346:33 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\unified_bus_form.dart:1361:33 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\unified_bus_form.dart:1430:29 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\unified_bus_form.dart:1448:48 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\unified_bus_form.dart:1457:31 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\unified_bus_form.dart:1639:13 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\unified_bus_form.dart:1722:30 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\widgets\add_exam_section.dart:272:9 - deprecated_member_use
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\add_staff_dialog.dart:2:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\add_staff_dialog.dart:3:8 - depend_on_referenced_packages
+   info - Parameter 'key' could be a super parameter - lib\widgets\add_staff_dialog.dart:8:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps - lib\widgets\add_staff_dialog.dart:67:50 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\widgets\add_staff_dialog.dart:68:34 - use_build_context_synchronously
+warning - Unused import: '../utils.dart' - lib\widgets\bus_details_view.dart:3:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\bus_details_view.dart:139:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\bus_details_view.dart:261:33 - deprecated_member_use
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\bus_stop_manager.dart:2:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\bus_stop_manager.dart:3:8 - depend_on_referenced_packages
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\dynamic_calendar_icon.dart:22:33 - deprecated_member_use
+   info - Constructors for public widgets should have a named 'key' parameter - lib\widgets\edit_exam_dialog.dart:9:9 - use_key_in_widget_constructors
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\edit_staff_dialog.dart:2:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\edit_staff_dialog.dart:3:8 - depend_on_referenced_packages
+   info - Parameter 'key' could be a super parameter - lib\widgets\edit_staff_dialog.dart:9:9 - use_super_parameters
+warning - Unused import: '../main.dart' - lib\widgets\management_sidebar.dart:2:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\management_sidebar.dart:38:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\management_sidebar.dart:52:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\management_sidebar.dart:57:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\management_sidebar.dart:270:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\management_sidebar.dart:272:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\management_sidebar.dart:274:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\management_sidebar.dart:292:43 - deprecated_member_use
+warning - Unused import: 'package:flutter/scheduler.dart' - lib\widgets\school_profile_dialog.dart:2:8 - unused_import
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\school_profile_dialog.dart:3:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\school_profile_dialog.dart:4:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\school_profile_dialog.dart:5:8 - depend_on_referenced_packages
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\widgets\school_profile_dialog.dart:290:47 - deprecated_member_use
+   info - Unnecessary 'this.' qualifier - lib\widgets\school_profile_dialog.dart:586:31 - unnecessary_this
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\widgets\school_profile_dialog.dart:589:31 - use_build_context_synchronously
+   info - Unnecessary 'this.' qualifier - lib\widgets\school_profile_dialog.dart:589:40 - unnecessary_this
+   info - Unnecessary 'this.' qualifier - lib\widgets\school_profile_dialog.dart:613:46 - unnecessary_this
+   info - Unnecessary 'this.' qualifier - lib\widgets\school_profile_dialog.dart:625:38 - unnecessary_this
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\school_profile_header.dart:2:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\student_list_dialog.dart:2:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\widgets\student_list_dialog.dart:3:8 - depend_on_referenced_packages
+   info - Don't use 'BuildContext's across async gaps - lib\widgets\student_list_dialog.dart:133:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\widgets\student_list_dialog.dart:232:30 - use_build_context_synchronously
+

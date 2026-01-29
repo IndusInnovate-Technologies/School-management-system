@@ -1,0 +1,41 @@
+Analyzing teacher-profile.dart...                               
+
+   info - The file name 'teacher-profile.dart' isn't a lower_case_with_underscores identifier - lib\teacher-profile.dart:1:1 - file_names
+   info - The import of 'package:flutter/scheduler.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\teacher-profile.dart:2:8 - unnecessary_import
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teacher-profile.dart:5:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teacher-profile.dart:6:8 - depend_on_referenced_packages
+   info - The private field _currentPassword could be 'final' - lib\teacher-profile.dart:158:10 - prefer_final_fields
+warning - The value of the field '_currentPassword' isn't used - lib\teacher-profile.dart:158:10 - unused_field
+   info - The private field _newPassword could be 'final' - lib\teacher-profile.dart:159:10 - prefer_final_fields
+warning - The value of the field '_newPassword' isn't used - lib\teacher-profile.dart:159:10 - unused_field
+   info - The private field _confirmPassword could be 'final' - lib\teacher-profile.dart:160:10 - prefer_final_fields
+warning - The value of the field '_confirmPassword' isn't used - lib\teacher-profile.dart:160:10 - unused_field
+   info - The private field _obscureCurrent could be 'final' - lib\teacher-profile.dart:161:8 - prefer_final_fields
+warning - The value of the field '_obscureCurrent' isn't used - lib\teacher-profile.dart:161:8 - unused_field
+   info - The private field _obscureNew could be 'final' - lib\teacher-profile.dart:162:8 - prefer_final_fields
+warning - The value of the field '_obscureNew' isn't used - lib\teacher-profile.dart:162:8 - unused_field
+   info - The private field _obscureConfirm could be 'final' - lib\teacher-profile.dart:163:8 - prefer_final_fields
+warning - The value of the field '_obscureConfirm' isn't used - lib\teacher-profile.dart:163:8 - unused_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:472:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:783:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:815:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:844:119 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:851:20 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:858:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:863:93 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:886:44 - deprecated_member_use
+   info - Unnecessary 'const' keyword - lib\teacher-profile.dart:902:17 - unnecessary_const
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:929:33 - deprecated_member_use
+warning - The declaration '_passwordField' isn't referenced - lib\teacher-profile.dart:1073:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:1124:67 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\teacher-profile.dart:1135:9 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:1152:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:1170:44 - deprecated_member_use
+warning - The declaration '_title' isn't referenced - lib\teacher-profile.dart:1181:10 - unused_element
+   info - Unnecessary 'this.' qualifier - lib\teacher-profile.dart:1411:31 - unnecessary_this
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\teacher-profile.dart:1414:31 - use_build_context_synchronously
+   info - Unnecessary 'this.' qualifier - lib\teacher-profile.dart:1414:40 - unnecessary_this
+   info - Unnecessary 'this.' qualifier - lib\teacher-profile.dart:1438:46 - unnecessary_this
+   info - Unnecessary 'this.' qualifier - lib\teacher-profile.dart:1450:38 - unnecessary_this
+
+37 issues found. (ran in 2.3s)

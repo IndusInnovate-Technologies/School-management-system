@@ -1,0 +1,87 @@
+﻿admin
+ [X] 0001_initial
+ [X] 0002_logentry_remove_auto_add
+ [X] 0003_logentry_add_action_flag_choices
+auth
+ [X] 0001_initial
+ [X] 0002_alter_permission_name_max_length
+ [X] 0003_alter_user_email_max_length
+ [X] 0004_alter_user_username_opts
+ [X] 0005_alter_user_last_login_null
+ [X] 0006_require_contenttypes_0002
+ [X] 0007_alter_validators_add_error_messages
+ [X] 0008_alter_user_username_max_length
+ [X] 0009_alter_user_last_name_max_length
+ [X] 0010_alter_group_name_max_length
+ [X] 0011_update_proxy_permissions
+ [X] 0012_alter_user_first_name_max_length
+contenttypes
+ [X] 0001_initial
+ [X] 0002_remove_content_type_name
+main_login
+ [X] 0001_initial
+ [X] 0006_user_reset_otp
+management_admin
+ [X] 0001_initial
+ [X] 0002_alter_activity_category
+ [X] 0003_activity_status
+ [X] 0004_remove_activity_status
+ [X] 0005_activity_activity_type
+ [X] 0006_remove_activity_activity_type
+ [X] 0007_alter_event_options_remove_event_date
+ [X] 0008_alter_event_options_event_date
+ [X] 0009_remove_galleryimage_photo_id
+ [X] 0010_galleryimage_photo_id
+ [X] 0011_remove_galleryimage_caption_and_more
+ [X] 0012_galleryimage_caption_galleryimage_uploaded_at
+ [X] 0069_remove_busstopstudent_student_grade_and_more
+ [X] 0070_busstopstudent_student_grade_and_more
+ [X] 0071_remove_event_end_datetime_and_more
+ [X] 0072_event_end_datetime_event_start_datetime
+ [X] 0073_alter_newadmission_grade
+ [X] 0074_rename_grade_newadmission_section_and_more
+ [X] 0075_rename_grade_to_section_all
+ [X] 0076_remove_fee_grade_busstopstudent_student_section_and_more
+ [X] 0077_remove_event_end_datetime_and_more
+ [X] 0078_fix_missing_columns
+ [X] 0079_force_add_missing_columns
+ [X] 0080_force_add_more_missing_columns
+ [X] 0054_alter_award_options_and_more
+ [X] 0056_award_document
+ [X] 0057_gallery_galleryimage
+ [X] 0058_alter_award_document
+ [X] 0059_student_achievements_student_activities_and_more
+ [X] 0060_alter_award_category
+ [X] 0061_delete_award
+ [X] 0062_award
+ [X] 0063_remove_galleryimage_gallery_remove_activity_status_and_more
+ [X] 0064_gallery_activity_status_event_time_galleryimage
+ [X] 0065_remove_galleryimage_gallery_remove_award_document_and_more
+ [X] 0066_gallery_award_document_student_achievements_and_more
+ [X] 0067_alter_event_options_remove_event_date_and_more
+ [X] 0068_gallery_photo_id_alter_galleryimage_image
+ [X] 0069_examination_management_exam_section
+ [X] 0070_remove_fee_grade_remove_newadmission_grade_and_more
+ [X] 0071_fee_grade_newadmission_grade_student_grade
+ [X] 0072_student_grade
+ [X] 0073_remove_event_end_datetime_and_more
+ [X] 0074_event_end_datetime_event_start_datetime
+ [X] 0081_merge_20260121_1458
+ [X] 0082_remove_fee_grade_remove_newadmission_grade_and_more
+ [ ] 0083_remove_fee_grade_remove_newadmission_grade_and_more
+sessions
+ [X] 0001_initial
+student_parent
+ [X] 0001_initial
+super_admin
+ [X] 0001_initial
+ [X] 0014_school_logo
+teacher
+ [X] 0001_initial
+ [X] 0005_timetable_color_timetable_room_and_more
+ [X] 0006_timetable_entry_type_alter_timetable_class_obj_and_more
+ [X] 0007_alter_timetable_unique_together
+ [X] 0002_attendance_remarks_attendance_student_name_and_more
+ [X] 0003_exam_duration_minutes_exam_exam_type_and_more
+ [X] 0004_assignment_assignment_type_assignment_instructions_and_more
+ [X] 0008_merge_20260121_1455

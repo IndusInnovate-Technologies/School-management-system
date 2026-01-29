@@ -1,0 +1,327 @@
+﻿.\venv\Scripts\python.
+exe : C:\Users\D-IT\De
+sktop\pp\backend\venv\
+Lib\site-packages\rest
+_framework_simplejwt\_
+_init__.py:1: 
+UserWarning: 
+pkg_resources is 
+deprecated as an API. 
+See https://setuptools
+.pypa.io/en/latest/pkg
+_resources.html. The 
+pkg_resources package 
+is slated for removal 
+as early as 
+2025-11-30. Refrain 
+from using this 
+package or pin to 
+Setuptools<81.
+At line:1 char:13
++ cd backend; .\venv\S
+cripts\python.exe 
+manage.py migrate > 
+migrate_err ...
++             ~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (C:\Users\D   
+ -IT\D... Setuptoo    
+ls<81.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+  from pkg_resources 
+import 
+DistributionNotFound, 
+get_distribution
+Operations to perform:
+  Apply all migrations: admin, auth, contenttypes, main_login, management_admin, sessions, student_parent, super_admin, teacher
+Running migrations:
+Traceback (most 
+recent call last):
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\backends\utils
+.py", line 87, in 
+_execute
+    return self.cursor
+.execute(sql)
+           ~~~~~~~~~~~
+~~~~~~~~^^^^^
+psycopg2.errors.Duplic
+ateColumn: column 
+"marital_status" of 
+relation "teachers" 
+already exists
+
+
+The above exception 
+was the direct cause 
+of the following 
+exception:
+
+Traceback (most 
+recent call last):
+  File "C:\Users\D-IT\
+Desktop\pp\backend\man
+age.py", line 22, in 
+<module>
+    main()
+    ~~~~^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\man
+age.py", line 18, in 
+main
+    execute_from_comma
+nd_line(sys.argv)
+    ~~~~~~~~~~~~~~~~~~
+~~~~~~~^^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\_
+_init__.py", line 
+442, in execute_from_c
+ommand_line
+    utility.execute()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\_
+_init__.py", line 
+436, in execute
+    self.fetch_command
+(subcommand).run_from_
+argv(self.argv)
+    ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~^^^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\b
+ase.py", line 412, in 
+run_from_argv
+    
+self.execute(*args, 
+**cmd_options)
+    ~~~~~~~~~~~~^^^^^^
+^^^^^^^^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\b
+ase.py", line 458, in 
+execute
+    output = 
+self.handle(*args, 
+**options)
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\b
+ase.py", line 106, in 
+wrapper
+    res = 
+handle_func(*args, 
+**kwargs)
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\c
+ommands\migrate.py", 
+line 356, in handle
+    
+post_migrate_state = 
+executor.migrate(
+        targets,
+    ...<3 lines>...
+        fake_initial=f
+ake_initial,
+    )
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\migrations\exe
+cutor.py", line 135, 
+in migrate
+    state = self._migr
+ate_all_forwards(
+        state, plan, 
+full_plan, fake=fake, 
+fake_initial=fake_init
+ial
+    )
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\migrations\exe
+cutor.py", line 167, 
+in 
+_migrate_all_forwards
+    state = 
+self.apply_migration(
+        state, 
+migration, fake=fake, 
+fake_initial=fake_init
+ial
+    )
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\migrations\exe
+cutor.py", line 252, 
+in apply_migration
+    state = migration.
+apply(state, 
+schema_editor)
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\migrations\mig
+ration.py", line 132, 
+in apply
+    operation.database
+_forwards(
+    ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~^
+        
+self.app_label, 
+schema_editor, 
+old_state, 
+project_state
+        ^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\migrations\ope
+rations\fields.py", 
+line 108, in 
+database_forwards
+    schema_editor.add_
+field(
+    ~~~~~~~~~~~~~~~~~~
+~~~~~^
+        from_model,
+        ^^^^^^^^^^^
+        field,
+        ^^^^^^
+    )
+    ^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\backends\base\
+schema.py", line 712, 
+in add_field
+    self.execute(sql, 
+params)
+    ~~~~~~~~~~~~^^^^^^
+^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\backends\postg
+resql\schema.py", 
+line 48, in execute
+    return 
+super().execute(sql, 
+None)
+           ~~~~~~~~~~~
+~~~~^^^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\backends\base\
+schema.py", line 201, 
+in execute
+    
+cursor.execute(sql, 
+params)
+    ~~~~~~~~~~~~~~^^^^
+^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\backends\utils
+.py", line 102, in 
+execute
+    return 
+super().execute(sql, 
+params)
+           ~~~~~~~~~~~
+~~~~^^^^^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\backends\utils
+.py", line 67, in 
+execute
+    return self._execu
+te_with_wrappers(
+           ~~~~~~~~~~~
+~~~~~~~~~~~~~~~~^
+        sql, params, 
+many=False, 
+executor=self._execute
+        ^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\backends\utils
+.py", line 80, in 
+_execute_with_wrappers
+    return 
+executor(sql, params, 
+many, context)
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\backends\utils
+.py", line 84, in 
+_execute
+    with self.db.wrap_
+database_errors:
+         ^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\utils.py", 
+line 91, in __exit__
+    raise dj_exc_value
+.with_traceback(traceb
+ack) from exc_value
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\backends\utils
+.py", line 87, in 
+_execute
+    return self.cursor
+.execute(sql)
+           ~~~~~~~~~~~
+~~~~~~~~^^^^^
+django.db.utils.Progra
+mmingError: column 
+"marital_status" of 
+relation "teachers" 
+already exists
+
+  Applying management_admin.0082_remove_fee_grade_remove_newadmission_grade_and_more...

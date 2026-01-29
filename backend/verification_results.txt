@@ -1,0 +1,13 @@
+Starting Financial Permission Tests...
+Created financial user: test_fin_perm@example.com
+Created FinancialDetails with school_id='TEST_SCHOOL_99'
+
+--- Testing Student Access (Restricted) ---
+GET /students/ -> 200 (Expected: 200)
+PASS: Read access allowed.
+POST /students/ -> 403 (Expected: 403)
+PASS: Write access denied.
+
+--- Testing Fee Access (Full Permissions) ---
+POST /fees/ -> 400 (Expected: 400 or 201, NOT 403)
+PASS: Write access allowed (Validation error is okay).

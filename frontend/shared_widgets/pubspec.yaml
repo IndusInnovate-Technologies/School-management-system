@@ -1,0 +1,22 @@
+name: shared_widgets
+description: Common UI components shared across all apps
+version: 1.0.0+1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  core:
+    path: ../core
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+

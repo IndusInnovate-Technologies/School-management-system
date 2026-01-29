@@ -1,0 +1,20 @@
+--------------------------------------------------
+Checking Attendance Records
+--------------------------------------------------
+
+Checking for: krishna@student.com
+  ✓ Found Student: kumari krishna (ID: NRK-002)
+    - Linked User: krishna
+    - Class: 'Class 1', Grade: 'A'
+    - School ID: KAKP6878787878887
+  ✓ Found 1 attendance records
+    - Date: 2026-01-08, Status: absent, Marked By: chary krishna - NRK-010
+
+Checking for: twinkle@student.com
+  ✓ Found Student: twinkle chary (ID: NRK-001)
+    - Linked User: twinkle
+    - Class: 'Class 1', Grade: 'A'
+    - School ID: KAKP6878787878887
+  ✓ Found 1 attendance records
+    - Date: 2026-01-08, Status: present, Marked By: chary krishna - NRK-010
+--------------------------------------------------

@@ -1,0 +1,17 @@
+Total students: 7
+ID: VVHS-001, Name: Sushilrao T, Class: Class 12, Grade: C, Email: raosushil@gmail.com, Created: 2026-01-08 05:13:27.393619+00:00
+ID: DUMSTU-143, Name: Thipparthi Vamshi, Class: Class 12, Grade: A, Email: vamshi@student.com, Created: 2026-01-08 05:13:29.553460+00:00
+ID: STUD-005, Name: Sushil Rao, Class: Class 8, Grade: B, Email: sushil1@gmail.com, Created: 2026-01-08 05:13:31.696984+00:00
+ID: STUD-004, Name: Praneeth B, Class: Class 5, Grade: C, Email: praneeth.b@gmail.com, Created: 2026-01-08 05:13:33.874163+00:00
+ID: STUD-003, Name: Nandu G, Class: Class 9, Grade: D, Email: nandu.G@gmail.com, Created: 2026-01-08 05:13:36.050040+00:00
+ID: STUD-002, Name: Harika k, Class: Class 10, Grade: A, Email: harika.k@gmail.com, Created: 2026-01-08 05:13:38.230169+00:00
+ID: STUD-001, Name: sushilrao thummanapally, Class: Class 2, Grade: A, Email: sushil@gmail.com, Created: 2026-01-08 05:13:40.368854+00:00
+
+Total NewAdmissions: 7
+ID: VVHS-001, Name: Sushilrao T, Email: raosushil@gmail.com, Status: Approved, Created: 2025-12-30 04:54:57.730275+00:00
+ID: DUMSTU-143, Name: Thipparthi Vamshi, Email: vamshi@student.com, Status: Approved, Created: 2025-12-25 07:07:50.058063+00:00
+ID: STUD-005, Name: Sushil Rao, Email: sushil1@gmail.com, Status: Approved, Created: 2025-12-25 06:16:21.697694+00:00
+ID: STUD-004, Name: Praneeth B, Email: praneeth.b@gmail.com, Status: Approved, Created: 2025-12-25 05:18:39.666141+00:00
+ID: STUD-003, Name: Nandu G, Email: nandu.G@gmail.com, Status: Approved, Created: 2025-12-25 05:07:46.412598+00:00
+ID: STUD-002, Name: Harika k, Email: harika.k@gmail.com, Status: Approved, Created: 2025-12-24 11:58:40.668062+00:00
+ID: STUD-001, Name: sushilrao thummanapally, Email: sushil@gmail.com, Status: Approved, Created: 2025-12-24 11:06:44.766228+00:00

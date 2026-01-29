@@ -1,0 +1,185 @@
+﻿.\venv\Scripts\python.
+exe : C:\Users\D-IT\De
+sktop\pp\backend\venv\
+Lib\site-packages\rest
+_framework_simplejwt\_
+_init__.py:1: 
+UserWarning: 
+pkg_resources is 
+deprecated as an API. 
+See https://setuptools
+.pypa.io/en/latest/pkg
+_resources.html. The 
+pkg_resources package 
+is slated for removal 
+as early as 
+2025-11-30. Refrain 
+from using this 
+package or pin to 
+Setuptools<81.
+At line:1 char:13
++ cd backend; .\venv\S
+cripts\python.exe 
+manage.py 
+makemigrations --verb 
+...
++             ~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (C:\Users\D   
+ -IT\D... Setuptoo    
+ls<81.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+  from pkg_resources 
+import 
+DistributionNotFound, 
+get_distribution
+Traceback (most 
+recent call last):
+  File "C:\Users\D-IT\
+Desktop\pp\backend\man
+age.py", line 22, in 
+<module>
+    main()
+    ~~~~^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\man
+age.py", line 18, in 
+main
+    execute_from_comma
+nd_line(sys.argv)
+    ~~~~~~~~~~~~~~~~~~
+~~~~~~~^^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\_
+_init__.py", line 
+442, in execute_from_c
+ommand_line
+    utility.execute()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\_
+_init__.py", line 
+436, in execute
+    self.fetch_command
+(subcommand).run_from_
+argv(self.argv)
+    ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~^^^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\b
+ase.py", line 412, in 
+run_from_argv
+    
+self.execute(*args, 
+**cmd_options)
+    ~~~~~~~~~~~~^^^^^^
+^^^^^^^^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\b
+ase.py", line 458, in 
+execute
+    output = 
+self.handle(*args, 
+**options)
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\b
+ase.py", line 106, in 
+wrapper
+    res = 
+handle_func(*args, 
+**kwargs)
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\core\management\c
+ommands\makemigrations
+.py", line 211, in 
+handle
+    loader.project_sta
+te(),
+    
+~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\migrations\loa
+der.py", line 361, in 
+project_state
+    return 
+self.graph.make_state(
+           
+~~~~~~~~~~~~~~~~~~~~~^
+        nodes=nodes, 
+at_end=at_end, real_ap
+ps=self.unmigrated_app
+s
+        ^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\migrations\gra
+ph.py", line 329, in 
+make_state
+    project_state = se
+lf.nodes[node].mutate_
+state(project_state, 
+preserve=False)
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\migrations\mig
+ration.py", line 91, 
+in mutate_state
+    operation.state_fo
+rwards(self.app_label,
+ new_state)
+    ~~~~~~~~~~~~~~~~~~
+~~~~~~^^^^^^^^^^^^^^^^
+^^^^^^^^^^^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\migrations\ope
+rations\fields.py", 
+line 165, in 
+state_forwards
+    state.remove_field
+(app_label, self.model
+_name_lower, 
+self.name)
+    ~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
+^
+  File "C:\Users\D-IT\
+Desktop\pp\backend\ven
+v\Lib\site-packages\dj
+ango\db\migrations\sta
+te.py", line 258, in 
+remove_field
+    old_field = model_
+state.fields.pop(name)
+KeyError: 'grade'

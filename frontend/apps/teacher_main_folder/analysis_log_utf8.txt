@@ -1,0 +1,188 @@
+﻿Analyzing teacher_main_folder...                                
+
+   info - The file name 'Teacher_Communication.dart' isn't a lower_case_with_underscores identifier - lib\Teacher_Communication.dart:1:1 - file_names
+  error - The named parameter 'grade' isn't defined - lib\Teacher_Communication.dart:446:17 - undefined_named_parameter
+   info - Unnecessary braces in a string interpolation - lib\Teacher_Communication.dart:449:60 - unnecessary_brace_in_string_interps
+warning - The operand can't be 'null', so the condition is always 'true' - lib\Teacher_Communication.dart:540:31 - unnecessary_null_comparison
+  error - The named parameter 'grade' isn't defined - lib\Teacher_Communication.dart:592:15 - undefined_named_parameter
+warning - The declaration '_loadChatHistory' isn't referenced - lib\Teacher_Communication.dart:617:16 - unused_element
+warning - The declaration '_initializeRealtimeChat' isn't referenced - lib\Teacher_Communication.dart:878:16 - unused_element
+  error - The getter 'section' isn't defined for the type 'ChatGroup' - lib\Teacher_Communication.dart:1118:30 - undefined_getter
+warning - The declaration '_buildChatArea' isn't referenced - lib\Teacher_Communication.dart:1545:10 - unused_element
+  error - The getter 'section' isn't defined for the type 'ChatContact' - lib\Teacher_Communication.dart:1580:67 - undefined_getter
+  error - The getter 'section' isn't defined for the type 'ChatContact' - lib\Teacher_Communication.dart:1582:71 - undefined_getter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\Teacher_Communication.dart:1765:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\Teacher_Communication.dart:1792:62 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\Teacher_Communication.dart:1821:64 - deprecated_member_use
+  error - 'section' isn't a field in the enclosing class - lib\Teacher_Communication.dart:1958:5 - initializing_formal_for_non_existent_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\Teacher_Communication.dart:2226:56 - deprecated_member_use
+   info - Parameter 'key' could be a super parameter - lib\Teacher_Communication.dart:2346:9 - use_super_parameters
+  error - The argument type 'String' can't be assigned to the parameter type 'int'.  - lib\Teacher_Communication.dart:2377:59 - argument_type_not_assignable
+  error - The argument type 'String' can't be assigned to the parameter type 'int'.  - lib\Teacher_Communication.dart:2378:31 - argument_type_not_assignable
+  error - The argument type 'String' can't be assigned to the parameter type 'int'.  - lib\Teacher_Communication.dart:2381:32 - argument_type_not_assignable
+  error - The argument type 'String' can't be assigned to the parameter type 'int'.  - lib\Teacher_Communication.dart:2385:31 - argument_type_not_assignable
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Communication.dart:2407:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Communication.dart:2411:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Communication.dart:2444:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Communication.dart:2448:30 - use_build_context_synchronously
+   info - Parameter 'key' could be a super parameter - lib\Teacher_Communication.dart:2702:9 - use_super_parameters
+   info - The private field _selectedFiles could be 'final' - lib\Teacher_Communication.dart:2780:14 - prefer_final_fields
+   info - The private field _selectedFileNames could be 'final' - lib\Teacher_Communication.dart:2781:16 - prefer_final_fields
+  error - The named parameter 'otherUserId' isn't defined - lib\Teacher_Communication.dart:2826:9 - undefined_named_parameter
+  error - The named parameter 'groupId' isn't defined - lib\Teacher_Communication.dart:2827:9 - undefined_named_parameter
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Communication.dart:3028:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Communication.dart:3089:35 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Communication.dart:3094:33 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Communication.dart:3096:33 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Communication.dart:3110:35 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Communication.dart:3123:30 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\Teacher_Communication.dart:3558:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\Teacher_Communication.dart:3737:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\Teacher_Communication.dart:3834:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\Teacher_Communication.dart:3909:51 - deprecated_member_use
+   info - The file name 'Teacher_Projects.dart' isn't a lower_case_with_underscores identifier - lib\Teacher_Projects.dart:1:1 - file_names
+   info - Constructors for public widgets should have a named 'key' parameter - lib\Teacher_Projects.dart:5:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\Teacher_Projects.dart:7:3 - library_private_types_in_public_api
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Projects.dart:292:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Projects.dart:300:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Projects.dart:308:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Projects.dart:394:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Projects.dart:402:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Projects.dart:410:38 - use_build_context_synchronously
+   info - The file name 'Teacher_Results.dart' isn't a lower_case_with_underscores identifier - lib\Teacher_Results.dart:1:1 - file_names
+warning - Unused import: 'package:main_login/main.dart' - lib\Teacher_Results.dart:3:8 - unused_import
+warning - Unused import: 'teacher-profile.dart' - lib\Teacher_Results.dart:4:8 - unused_import
+   info - Statements in an if should be enclosed in a block - lib\Teacher_Results.dart:241:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\Teacher_Results.dart:243:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\Teacher_Results.dart:245:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\Teacher_Results.dart:247:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\Teacher_Results.dart:249:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\Teacher_Results.dart:251:7 - curly_braces_in_flow_control_structures
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\Teacher_Results.dart:383:7 - deprecated_member_use
+warning - The value of the local variable 'isLargeScreen' isn't used - lib\Teacher_Results.dart:441:11 - unused_local_variable
+   info - The file name 'Teacher_Tasks.dart' isn't a lower_case_with_underscores identifier - lib\Teacher_Tasks.dart:1:1 - file_names
+   info - Constructors for public widgets should have a named 'key' parameter - lib\Teacher_Tasks.dart:5:7 - use_key_in_widget_constructors
+   info - Invalid use of a private type in a public API - lib\Teacher_Tasks.dart:7:3 - library_private_types_in_public_api
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\Teacher_Tasks.dart:160:86 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Tasks.dart:332:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Tasks.dart:340:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Tasks.dart:348:30 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\Teacher_Tasks.dart:403:19 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\Teacher_Tasks.dart:422:19 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Tasks.dart:477:42 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Tasks.dart:485:42 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\Teacher_Tasks.dart:493:40 - use_build_context_synchronously
+   info - The file name 'Teacher_class_students.dart' isn't a lower_case_with_underscores identifier - lib\Teacher_class_students.dart:1:1 - file_names
+warning - Unused import: 'services/api_service.dart' - lib\Teacher_class_students.dart:2:8 - unused_import
+warning - The declaration '_logout' isn't referenced - lib\Teacher_class_students.dart:197:8 - unused_element
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\Teacher_class_students.dart:273:7 - deprecated_member_use
+   info - The file name 'Teacher_classes.dart' isn't a lower_case_with_underscores identifier - lib\Teacher_classes.dart:1:1 - file_names
+warning - Unused import: 'dart:math' - lib\Teacher_classes.dart:1:8 - unused_import
+warning - Unused import: 'package:main_login/main.dart' - lib\Teacher_classes.dart:3:8 - unused_import
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\Teacher_classes.dart:87:7 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\Teacher_classes.dart:286:35 - deprecated_member_use
+warning - The declaration '_viewClassStudents' isn't referenced - lib\Teacher_classes.dart:494:8 - unused_element
+warning - The declaration '_markAttendance' isn't referenced - lib\Teacher_classes.dart:500:8 - unused_element
+   info - The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\main.dart:2:8 - unnecessary_import
+   info - The 'if' statement could be replaced by a null-aware assignment - lib\main.dart:409:13 - prefer_conditional_assignment
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:704:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:782:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:812:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:1577:33 - deprecated_member_use
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\main.dart:1784:7 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:2120:62 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\main.dart:2167:37 - use_build_context_synchronously
+warning - The declaration '_buildDashboardTitle' isn't referenced - lib\main.dart:2215:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:2938:33 - deprecated_member_use
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\main.dart:3113:7 - deprecated_member_use
+  error - The name 'fetchChatMessages' is already defined - lib\services\api_service.dart:533:32 - duplicate_definition
+  error - The name 'fetchChatHistory' is already defined - lib\services\api_service.dart:553:32 - duplicate_definition
+   info - The file name 'teacher-assignment.dart' isn't a lower_case_with_underscores identifier - lib\teacher-assignment.dart:1:1 - file_names
+warning - Unused import: 'teacher-profile.dart' - lib\teacher-assignment.dart:3:8 - unused_import
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\teacher-assignment.dart:1139:7 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-assignment.dart:1393:33 - deprecated_member_use
+   info - The file name 'teacher-attendance.dart' isn't a lower_case_with_underscores identifier - lib\teacher-attendance.dart:1:1 - file_names
+   info - Don't invoke 'print' in production code - lib\teacher-attendance.dart:175:7 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\teacher-attendance.dart:277:30 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block - lib\teacher-attendance.dart:312:47 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\teacher-attendance.dart:313:51 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\teacher-attendance.dart:314:49 - curly_braces_in_flow_control_structures
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\teacher-attendance.dart:446:21 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\teacher-attendance.dart:464:21 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-attendance.dart:540:33 - deprecated_member_use
+   info - The file name 'teacher-exam.dart' isn't a lower_case_with_underscores identifier - lib\teacher-exam.dart:1:1 - file_names
+warning - The declaration '_promptAddSubject' isn't referenced - lib\teacher-exam.dart:267:8 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-exam.dart:381:33 - deprecated_member_use
+   info - Unnecessary braces in a string interpolation - lib\teacher-exam.dart:1056:38 - unnecessary_brace_in_string_interps
+   info - Don't use 'BuildContext's across async gaps - lib\teacher-exam.dart:1127:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\teacher-exam.dart:1152:31 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\teacher-exam.dart:1219:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\teacher-exam.dart:1223:40 - use_build_context_synchronously
+   info - 'onPopInvoked' is deprecated and shouldn't be used. Use onPopInvokedWithResult instead. This feature was deprecated after v3.22.0-12.0.pre - lib\teacher-exam.dart:1285:7 - deprecated_member_use
+   info - The file name 'teacher-grades.dart' isn't a lower_case_with_underscores identifier - lib\teacher-grades.dart:1:1 - file_names
+   info - The file name 'teacher-profile.dart' isn't a lower_case_with_underscores identifier - lib\teacher-profile.dart:1:1 - file_names
+   info - The import of 'package:flutter/scheduler.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\teacher-profile.dart:2:8 - unnecessary_import
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teacher-profile.dart:5:8 - depend_on_referenced_packages
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teacher-profile.dart:6:8 - depend_on_referenced_packages
+   info - The private field _currentPassword could be 'final' - lib\teacher-profile.dart:158:10 - prefer_final_fields
+warning - The value of the field '_currentPassword' isn't used - lib\teacher-profile.dart:158:10 - unused_field
+   info - The private field _newPassword could be 'final' - lib\teacher-profile.dart:159:10 - prefer_final_fields
+warning - The value of the field '_newPassword' isn't used - lib\teacher-profile.dart:159:10 - unused_field
+   info - The private field _confirmPassword could be 'final' - lib\teacher-profile.dart:160:10 - prefer_final_fields
+warning - The value of the field '_confirmPassword' isn't used - lib\teacher-profile.dart:160:10 - unused_field
+   info - The private field _obscureCurrent could be 'final' - lib\teacher-profile.dart:161:8 - prefer_final_fields
+warning - The value of the field '_obscureCurrent' isn't used - lib\teacher-profile.dart:161:8 - unused_field
+   info - The private field _obscureNew could be 'final' - lib\teacher-profile.dart:162:8 - prefer_final_fields
+warning - The value of the field '_obscureNew' isn't used - lib\teacher-profile.dart:162:8 - unused_field
+   info - The private field _obscureConfirm could be 'final' - lib\teacher-profile.dart:163:8 - prefer_final_fields
+warning - The value of the field '_obscureConfirm' isn't used - lib\teacher-profile.dart:163:8 - unused_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:472:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:783:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:815:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:844:119 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:851:20 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:858:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:863:93 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:886:44 - deprecated_member_use
+   info - Unnecessary 'const' keyword - lib\teacher-profile.dart:902:17 - unnecessary_const
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:929:33 - deprecated_member_use
+warning - The declaration '_passwordField' isn't referenced - lib\teacher-profile.dart:1073:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:1124:67 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\teacher-profile.dart:1135:9 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:1152:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-profile.dart:1170:44 - deprecated_member_use
+warning - The declaration '_title' isn't referenced - lib\teacher-profile.dart:1181:10 - unused_element
+   info - Unnecessary 'this.' qualifier - lib\teacher-profile.dart:1411:31 - unnecessary_this
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\teacher-profile.dart:1414:31 - use_build_context_synchronously
+   info - Unnecessary 'this.' qualifier - lib\teacher-profile.dart:1414:40 - unnecessary_this
+   info - Unnecessary 'this.' qualifier - lib\teacher-profile.dart:1438:46 - unnecessary_this
+   info - Unnecessary 'this.' qualifier - lib\teacher-profile.dart:1450:38 - unnecessary_this
+   info - The file name 'teacher-studymaterial.dart' isn't a lower_case_with_underscores identifier - lib\teacher-studymaterial.dart:1:1 - file_names
+   info - 'red' is deprecated and shouldn't be used. Use (*.r * 255.0).round().clamp(0, 255) - lib\teacher-studymaterial.dart:42:23 - deprecated_member_use
+   info - 'green' is deprecated and shouldn't be used. Use (*.g * 255.0).round().clamp(0, 255) - lib\teacher-studymaterial.dart:42:38 - deprecated_member_use
+   info - 'blue' is deprecated and shouldn't be used. Use (*.b * 255.0).round().clamp(0, 255) - lib\teacher-studymaterial.dart:42:55 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\teacher-studymaterial.dart:55:30 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\teacher-studymaterial.dart:573:51 - unnecessary_underscores
+   info - Statements in an if should be enclosed in a block - lib\teacher-studymaterial.dart:1161:35 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\teacher-studymaterial.dart:1163:35 - curly_braces_in_flow_control_structures
+   info - The file name 'teacher-timetable.dart' isn't a lower_case_with_underscores identifier - lib\teacher-timetable.dart:1:1 - file_names
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-timetable.dart:278:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-timetable.dart:336:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-timetable.dart:435:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-timetable.dart:527:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-timetable.dart:566:26 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-timetable.dart:602:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-timetable.dart:696:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-timetable.dart:749:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-timetable.dart:793:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher-timetable.dart:833:26 - deprecated_member_use
+   info - The imported package 'core' isn't a dependency of the importing package - lib\teacher_homework.dart:6:8 - depend_on_referenced_packages
+   info - Invalid use of a private type in a public API - lib\teacher_homework.dart:82:3 - library_private_types_in_public_api
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\teacher_homework.dart:318:22 - deprecated_member_use
+   info - Invalid use of a private type in a public API - lib\teacher_homework.dart:370:3 - library_private_types_in_public_api
+warning - The value of the field '_isLoadingClasses' isn't used - lib\teacher_homework.dart:386:8 - unused_field
+   info - Don't invoke 'print' in production code - lib\teacher_homework.dart:425:9 - avoid_print
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\teacher_homework.dart:575:23 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\teacher_homework.dart:593:23 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\teacher_homework.dart:654:17 - deprecated_member_use
+

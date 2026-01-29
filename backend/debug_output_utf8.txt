@@ -1,0 +1,88 @@
+﻿--- DEBUGGING DATA VISIBILITY ---
+
+1. Users & Students:
+Student: Sushilrao T (Email: raosushil@gmail.com) - User: raosushil@gmail.com - Class: Class 12
+Student: Thipparthi Vamshi (Email: vamshi@student.com) - User: vamshi@student.com - Class: Class 12
+Student: Sushil Rao (Email: sushil1@gmail.com) - User: sushil1@gmail.com - Class: Class 8
+Student: Praneeth B (Email: praneeth.b@gmail.com) - User: praneeth.b@gmail.com - Class: Class 5
+Student: Nandu G (Email: nandu.G@gmail.com) - User: nandu.G@gmail.com - Class: Class 9
+Student: Harika k (Email: harika.k@gmail.com) - User: harika.k@gmail.com - Class: Class 10
+Student: sushilrao thummanapally (Email: sushil@gmail.com) - User: sushil@gmail.com - Class: Class 2
+Student: twinkle chary (Email: twinkle@student.com) - User: twinkle@student.com - Class: Class 1
+Student: kumari krishna (Email: krishna@student.com) - User: krishna@student.com - Class: Class 1
+Student: frist name (Email: l@std.com) - User: l@std.com - Class: Class 10
+Student: applicant name (Email: k@std.com) - User: k@std.com - Class: Class 5
+
+2. Classes & Enrollments (ClassStudent):
+Class: 1 A (ID: 114)
+Class: 2 A (ID: 115)
+Class: 3 A (ID: 116)
+Class: 4 A (ID: 117)
+Class: 5 A (ID: 118)
+Class: 6 A (ID: 119)
+Class: 7 A (ID: 120)
+Class: 8 A (ID: 121)
+Class: 9 A (ID: 122)
+Class: 10 A (ID: 123)
+Class: Class 1 A (ID: 124)
+Class: Class 1 B (ID: 125)
+Class: Class 5 B (ID: 126)
+  - Student: applicant name (Email: k@std.com)
+  - Student: Sushilrao T (Email: raosushil@gmail.com)
+  - Student: Harika k (Email: harika.k@gmail.com)
+Class: Class 10 C (ID: 127)
+Class: Nursery A (ID: 128)
+Class: Nursery B (ID: 129)
+Class: Nursery C (ID: 130)
+Class: Nursery D (ID: 131)
+Class: LKG A (ID: 132)
+Class: LKG B (ID: 133)
+Class: LKG C (ID: 134)
+Class: LKG D (ID: 135)
+Class: UKG A (ID: 136)
+Class: UKG B (ID: 137)
+Class: UKG C (ID: 138)
+Class: UKG D (ID: 139)
+Class: Class 1 C (ID: 140)
+Class: Class 1 D (ID: 141)
+Class: Class 2 A (ID: 142)
+Class: Class 2 B (ID: 143)
+Class: Class 2 C (ID: 144)
+Class: Class 2 D (ID: 145)
+Class: Class 3 A (ID: 146)
+Class: Class 3 B (ID: 147)
+Class: Class 3 C (ID: 148)
+Class: Class 3 D (ID: 149)
+Class: Class 4 A (ID: 150)
+Class: Class 4 B (ID: 151)
+Class: Class 4 C (ID: 152)
+Class: Class 4 D (ID: 153)
+Class: Class 5 A (ID: 154)
+Class: Class 5 C (ID: 155)
+Class: Class 5 D (ID: 156)
+Class: Class 6 A (ID: 157)
+Class: Class 6 B (ID: 158)
+Class: Class 6 C (ID: 159)
+Class: Class 6 D (ID: 160)
+Class: Class 7 A (ID: 161)
+Class: Class 7 B (ID: 162)
+Class: Class 7 C (ID: 163)
+Class: Class 7 D (ID: 164)
+Class: Class 8 A (ID: 165)
+Class: Class 8 B (ID: 166)
+Class: Class 8 C (ID: 167)
+Class: Class 8 D (ID: 168)
+Class: Class 9 A (ID: 169)
+Class: Class 9 B (ID: 170)
+Class: Class 9 C (ID: 171)
+Class: Class 9 D (ID: 172)
+Class: Class 10 A (ID: 173)
+Class: Class 10 B (ID: 174)
+Class: Class 10 D (ID: 175)
+
+3. Projects:
+Project: Advanced Project (ID: 3) - Assigned to Class ID: 123 (10 A)
+Project: new (ID: 2) - Assigned to Class ID: 136 (UKG A)
+
+4. Tasks:
+Task: new (ID: 1) - Assigned to Class ID: 114 (1 A)

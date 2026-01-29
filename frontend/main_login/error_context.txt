@@ -1,0 +1,331 @@
+
+  build_output.txt:4:ain_fo
+lder/lib/services/api
+> build_output.txt:5:_servi
+ce.dart:6:18: Error: 
+  build_output.txt:6:Can't 
+find '}' to match 
+  build_output.txt:7:'{'.
+  build_output.txt:8:At 
+line:1 char:25
+  build_output.txt:9:+ ... 
+end/main_login; 
+  build_output.txt:10:flutt
+er run -d chrome > 
+  build_output.txt:11:build
+_output.txt 2>&1; 
+  
+build_output.txt:12:Get-Co 
+...
+  build_output.txt:13:+    
+                 ~~~~~
+  build_output.txt:14:~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+  build_output.txt:15:~~~~~
+~~~~~~~~
+  build_output.txt:28:teach
+ers.dart:1293:19: 
+> 
+build_output.txt:29:Error: 
+Can't find ']' to 
+  
+build_output.txt:30:match 
+'['.
+  build_output.txt:31:     
+   children: [
+  build_output.txt:32:     
+             ^
+  build_output.txt:33:../ap
+ps/teacher_main_folder
+  build_output.txt:34:/lib/
+teacher-timetable.dart
+> build_output.txt:35::66:4
+4: Error: Member not 
+  
+build_output.txt:36:found: 
+'ApiService.fetchTim
+  build_output.txt:37:etabl
+e'.
+  build_output.txt:38:     
+ final entries = 
+  
+build_output.txt:39:await 
+api.ApiService.fetchT
+  build_output.txt:40:imeta
+ble();
+  build_output.txt:41:     
+                      
+  build_output.txt:42:     
+           
+  build_output.txt:43:^^^^^
+^^^^^^^^^
+  build_output.txt:44:../ap
+ps/teacher_main_folder
+  build_output.txt:45:/lib/
+services/api_service.d
+> build_output.txt:46:art:3
+21:3: Error: Can't 
+  build_output.txt:47:have 
+modifier 'static' 
+  build_output.txt:48:here.
+  build_output.txt:49:Try 
+removing 'static'.
+  build_output.txt:50:  
+static 
+  build_output.txt:51:Futur
+e<List<Map<String, 
+  build_output.txt:52:dynam
+ic>>> 
+  build_output.txt:53:fetch
+Timetable() async {
+  build_output.txt:54:  
+^^^^^^
+  build_output.txt:55:../ap
+ps/management_org/lib/
+  build_output.txt:56:teach
+ers.dart:1318:12: 
+> 
+build_output.txt:57:Error: 
+Expected ';' after 
+  build_output.txt:58:this.
+  build_output.txt:59:     
+     )),
+  build_output.txt:60:     
+      ^
+  build_output.txt:61:../ap
+ps/management_org/lib/
+  build_output.txt:62:teach
+ers.dart:1318:13: 
+> 
+build_output.txt:63:Error: 
+Expected an 
+  build_output.txt:64:ident
+ifier, but got ','.
+  build_output.txt:65:Try 
+inserting an 
+  build_output.txt:66:ident
+ifier before ','.
+  build_output.txt:67:     
+     )),
+  build_output.txt:68:     
+       ^
+  build_output.txt:69:../ap
+ps/management_org/lib/
+  build_output.txt:70:teach
+ers.dart:1318:13: 
+> 
+build_output.txt:71:Error: 
+Unexpected token 
+  build_output.txt:72:';'.
+  build_output.txt:73:     
+     )),
+  build_output.txt:74:     
+       ^
+  build_output.txt:75:../ap
+ps/management_org/lib/
+  build_output.txt:76:teach
+ers.dart:1319:9: 
+> 
+build_output.txt:77:Error: 
+Expected an 
+  build_output.txt:78:ident
+ifier, but got ']'.
+  build_output.txt:79:Try 
+inserting an 
+  build_output.txt:80:ident
+ifier before ']'.
+  build_output.txt:81:     
+   ],
+  build_output.txt:82:     
+   ^
+  build_output.txt:83:../ap
+ps/management_org/lib/
+  build_output.txt:84:teach
+ers.dart:1318:13: 
+> 
+build_output.txt:85:Error: 
+Expected ';' after 
+  build_output.txt:86:this.
+  build_output.txt:87:     
+     )),
+  build_output.txt:88:     
+       ^
+  build_output.txt:89:../ap
+ps/management_org/lib/
+  build_output.txt:90:teach
+ers.dart:1319:9: 
+> 
+build_output.txt:91:Error: 
+Unexpected token 
+  build_output.txt:92:';'.
+  build_output.txt:93:     
+   ],
+  build_output.txt:94:     
+   ^
+  build_output.txt:95:../ap
+ps/management_org/lib/
+  build_output.txt:96:teach
+ers.dart:1319:10: 
+> 
+build_output.txt:97:Error: 
+Expected an 
+  build_output.txt:98:ident
+ifier, but got ','.
+  build_output.txt:99:Try 
+inserting an 
+  build_output.txt:100:iden
+tifier before ','.
+  build_output.txt:101:    
+    ],
+  build_output.txt:102:    
+     ^
+  build_output.txt:103:../a
+pps/management_org/lib/
+  build_output.txt:104:teac
+hers.dart:1319:9: 
+> build_output.txt:105:Erro
+r: Expected ';' after 
+  
+build_output.txt:106:this.
+  build_output.txt:107:    
+    ],
+  build_output.txt:108:    
+    ^
+  build_output.txt:109:../a
+pps/management_org/lib/
+  build_output.txt:110:teac
+hers.dart:1319:10: 
+> build_output.txt:111:Erro
+r: Unexpected token 
+  build_output.txt:112:';'.
+  build_output.txt:113:    
+    ],
+  build_output.txt:114:    
+     ^
+  build_output.txt:115:../a
+pps/management_org/lib/
+  build_output.txt:116:teac
+hers.dart:1320:7: 
+> build_output.txt:117:Erro
+r: Expected an 
+  build_output.txt:118:iden
+tifier, but got ')'.
+  build_output.txt:119:Try 
+inserting an 
+  build_output.txt:120:iden
+tifier before ')'.
+  build_output.txt:121:    
+  ),
+  build_output.txt:122:    
+  ^
+  build_output.txt:123:../a
+pps/management_org/lib/
+  build_output.txt:124:teac
+hers.dart:1319:10: 
+> build_output.txt:125:Erro
+r: Expected ';' after 
+  
+build_output.txt:126:this.
+  build_output.txt:127:    
+    ],
+  build_output.txt:128:    
+     ^
+  build_output.txt:129:../a
+pps/management_org/lib/
+  build_output.txt:130:teac
+hers.dart:1320:7: 
+> build_output.txt:131:Erro
+r: Unexpected token 
+  build_output.txt:132:';'.
+  build_output.txt:133:    
+  ),
+  build_output.txt:134:    
+  ^
+  build_output.txt:135:../a
+pps/management_org/lib/
+  build_output.txt:136:teac
+hers.dart:1320:8: 
+> build_output.txt:137:Erro
+r: Expected an 
+  build_output.txt:138:iden
+tifier, but got ','.
+  build_output.txt:139:Try 
+inserting an 
+  build_output.txt:140:iden
+tifier before ','.
+  build_output.txt:141:    
+  ),
+  build_output.txt:142:    
+   ^
+  build_output.txt:143:../a
+pps/management_org/lib/
+  build_output.txt:144:teac
+hers.dart:1320:7: 
+> build_output.txt:145:Erro
+r: Expected ';' after 
+  
+build_output.txt:146:this.
+  build_output.txt:147:    
+  ),
+  build_output.txt:148:    
+  ^
+  build_output.txt:149:../a
+pps/management_org/lib/
+  build_output.txt:150:teac
+hers.dart:1320:8: 
+> build_output.txt:151:Erro
+r: Unexpected token 
+  build_output.txt:152:';'.
+  build_output.txt:153:    
+  ),
+  build_output.txt:154:    
+   ^
+  build_output.txt:155:../a
+pps/management_org/lib/
+  build_output.txt:156:teac
+hers.dart:1321:5: 
+> build_output.txt:157:Erro
+r: Expected an 
+  build_output.txt:158:iden
+tifier, but got ')'.
+  build_output.txt:159:Try 
+inserting an 
+  build_output.txt:160:iden
+tifier before ')'.
+  build_output.txt:161:    
+);
+  build_output.txt:162:    
+^
+  build_output.txt:163:../a
+pps/management_org/lib/
+  build_output.txt:164:teac
+hers.dart:1320:8: 
+> build_output.txt:165:Erro
+r: Expected ';' after 
+  
+build_output.txt:166:this.
+  build_output.txt:167:    
+  ),
+  build_output.txt:168:    
+   ^
+  build_output.txt:169:../a
+pps/management_org/lib/
+  build_output.txt:170:teac
+hers.dart:1321:5: 
+> build_output.txt:171:Erro
+r: Unexpected token 
+  build_output.txt:172:';'.
+  build_output.txt:173:    
+);
+  build_output.txt:174:    
+^
+  build_output.txt:175:Wait
+ing for connection from 
+debug service on Chrome... 
+            42.3s
+  build_output.txt:176:Fail
+ed to compile 
+  build_output.txt:177:appl
+ication.
+
+
