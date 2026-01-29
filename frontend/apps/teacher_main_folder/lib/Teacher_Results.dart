@@ -129,6 +129,10 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
   Future<void> _loadClasses() async {
     try {
       final data = await api.ApiService.fetchTeacherClasses();
+      if (data.isEmpty) {
+        // Trigger fallback if data is empty (likely due to API timeout/error handled internally by service)
+        throw Exception('No classes fetched');
+      }
       setState(() {
         _classes = data.map<Class>((json) {
            // Safely handle id as String
