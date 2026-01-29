@@ -8,9 +8,13 @@ import 'services/api_service.dart' as api;
 
 class Class {
   final String id;
-  final String name;
+  final String grade;
+  final String section;
   final List<String> subjects;
-  Class(this.id, this.name, this.subjects);
+
+  Class(this.id, this.grade, this.section, this.subjects);
+
+  String get name => "$grade - $section";
 }
 
 class StudentResult {
@@ -92,6 +96,8 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
 
   // Form State
   String? _selectedClassId;
+  String? _selectedGrade;
+  String? _selectedSection;
   String? _selectedSubject;
   String? _selectedExamType;
   final TextEditingController _dateController = TextEditingController(
@@ -127,7 +133,8 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
         _classes = data.map<Class>((json) {
            // Safely handle id as String
            final id = json['id'].toString(); 
-           final name = "${json['name']} - ${json['section']}";
+           final grade = json['name']?.toString() ?? 'Class';
+           final section = json['section']?.toString() ?? 'A';
            // Use subjects from API if available, else defaults
            List<String> subjs = ['General'];
            if (json['subjects'] != null && (json['subjects'] as List).isNotEmpty) {
@@ -136,12 +143,22 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
              // Fallback subjects
              subjs = ['Mathematics', 'Science', 'English', 'History', 'Geography', 'Physics', 'Chemistry', 'Biology'];
            }
-           return Class(id, name, subjs);
+           return Class(id, grade, section, subjs);
         }).toList();
       });
     } catch (e) {
       debugPrint('Error loading classes: $e');
-      _showSnackBar('Failed to load classes', isError: true);
+      _showSnackBar('Failed to load classes (Using offline data)', isError: true);
+      // Fallback Mock Data for testing/offline usage
+      setState(() {
+        _classes = [
+          Class('1', 'Class 1', 'A', ['Math', 'English']),
+          Class('2', 'Class 1', 'B', ['Math', 'English']),
+          Class('3', 'Class 2', 'A', ['Science', 'History']),
+          Class('4', 'Class 10', 'A', ['Physics', 'Chemistry', 'Math']),
+          Class('5', 'Class 10', 'B', ['Physics', 'Chemistry', 'Biology']),
+        ];
+      });
     }
   }
 
@@ -149,8 +166,24 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
 
   Class? get _selectedClass => _classes.isEmpty ? null : _classes.firstWhere(
     (cls) => cls.id == _selectedClassId,
-    orElse: () => _classes.first,
+    orElse: () => _classes.first, // Fallback might need adjustment if logic requires strict matching
   );
+
+  void _updateSelectedClassId() {
+    _selectedSubject = null; // Reset subject
+    if (_selectedGrade != null && _selectedSection != null) {
+      try {
+        final cls = _classes.firstWhere(
+          (c) => c.grade == _selectedGrade && c.section == _selectedSection
+        );
+        _selectedClassId = cls.id;
+      } catch (e) {
+        _selectedClassId = null; // Combination not found
+      }
+    } else {
+      _selectedClassId = null;
+    }
+  }
 
   // --- Business Logic ---
 
@@ -517,17 +550,39 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
                           : constraints.maxWidth,
                       child: _buildDropdownField(
                         'Select Class',
-                        _classes.map((cls) => cls.name).toList(),
+                        _classes.map((cls) => cls.grade).toSet().toList(),
                         (value) {
                           setState(() {
-                            _selectedClassId = _classes
-                                .firstWhere((cls) => cls.name == value)
-                                .id;
-                            _selectedSubject =
-                                null; // Reset subject when class changes
+                            _selectedGrade = value;
+                            _selectedSection = null; // Reset section when class changes
+                            _updateSelectedClassId();
                           });
                         },
-                        _selectedClass?.name,
+                        _selectedGrade,
+                      ),
+                    ),
+                    // Section Dropdown
+                    SizedBox(
+                      width: crossAxisCount > 1
+                          ? (constraints.maxWidth / crossAxisCount) - 20
+                          : constraints.maxWidth,
+                      child: _buildDropdownField(
+                        'Select Section',
+                        _selectedGrade != null
+                            ? _classes
+                                .where((cls) => cls.grade == _selectedGrade)
+                                .map((cls) => cls.section)
+                                .toSet()
+                                .toList()
+                            : [],
+                        (value) {
+                          setState(() {
+                            _selectedSection = value;
+                            _updateSelectedClassId();
+                          });
+                        },
+                        _selectedSection,
+                        isEnabled: _selectedGrade != null,
                       ),
                     ),
                     // Subject Dropdown
