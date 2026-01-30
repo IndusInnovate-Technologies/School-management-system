@@ -64,7 +64,7 @@ class ApiService {
       final headers = await _getAuthHeaders();
       final resp = await http
           .get(Uri.parse(studentsEndpoint), headers: headers)
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
       
       debugPrint('Fetch students status: ${resp.statusCode}');
       final bodyPreview = resp.body.length > 200 ? resp.body.substring(0, 200) : resp.body;
@@ -96,7 +96,7 @@ class ApiService {
       final headers = await _getAuthHeaders();
       final resp = await http
           .get(Uri.parse(teachersEndpoint), headers: headers)
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
       
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
@@ -110,11 +110,42 @@ class ApiService {
           return results;
         }
         return [];
+        return [];
       }
-      throw Exception('Failed to fetch teachers: ${resp.statusCode}');
+      return [];
     } catch (e) {
       debugPrint('Error fetching teachers: $e');
       rethrow;
+    }
+  }
+
+  static Future<List<dynamic>> fetchDepartments() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http
+          .get(Uri.parse('$_base/departments/'), headers: headers)
+          .timeout(const Duration(seconds: 30));
+      
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body);
+        if (data is List) {
+          debugPrint('Fetched ${data.length} departments');
+          return data;
+        }
+        if (data is Map && data.containsKey('results')) {
+          final results = data['results'] as List;
+          debugPrint('Fetched ${results.length} departments from paginated response');
+          return results;
+        }
+        return [];
+      }
+      throw Exception('Failed to fetch departments: ${resp.statusCode}');
+    } catch (e) {
+      debugPrint('Error fetching departments: $e');
+      // Return empty list instead of rethrowing to prevent UI crash, 
+      // or rethrow if you want to handle it in UI.
+      // Given the offline issues, let's return mock if needed or just empty.
+      return []; 
     }
   }
 
@@ -124,7 +155,7 @@ class ApiService {
       final headers = await _getAuthHeaders();
       final resp = await http
           .get(Uri.parse('http://127.0.0.1:8000/api/teacher/profile/'), headers: headers)
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       if (resp.statusCode == 200) {
         return jsonDecode(resp.body) as Map<String, dynamic>;
       }
@@ -142,7 +173,7 @@ class ApiService {
       final headers = await _getAuthHeaders();
       final resp = await http
           .get(Uri.parse('http://127.0.0.1:8000/api/teacher/classes/'), headers: headers)
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
@@ -164,7 +195,7 @@ class ApiService {
       final headers = await _getAuthHeaders();
       final resp = await http
           .get(Uri.parse('http://127.0.0.1:8000/api/teacher/class-students/?class_obj=$classId'), headers: headers)
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 30));
       
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
@@ -186,7 +217,7 @@ class ApiService {
       final headers = await _getAuthHeaders();
       final resp = await http
           .get(Uri.parse('http://127.0.0.1:8000/api/teacher/communications/'), headers: headers)
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
         if (data is List) return data;
@@ -469,6 +500,21 @@ class ApiService {
     }
   }
 
+  static Future<bool> editMessage(String messageId, String newText) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.patch(
+        Uri.parse('http://127.0.0.1:8000/api/student-parent/chat-messages/$messageId/'),
+        headers: headers,
+        body: jsonEncode({'message_text': newText}),
+      );
+      return resp.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error editing message: $e');
+      return false;
+    }
+  }
+
   static Future<bool> deleteMessage(String messageId) async {
     try {
       final headers = await _getAuthHeaders();
@@ -545,6 +591,13 @@ class ApiService {
     String? repliedTo,
   }) async {
     try {
+      debugPrint('=== sendMessageWithAttachment START ===');
+      debugPrint('recipient: $recipient');
+      debugPrint('messageText: $messageText');
+      debugPrint('groupId: $groupId');
+      debugPrint('otherUserId: $otherUserId');
+      debugPrint('messageType: $messageType');
+      
       final headers = await _getAuthHeaders();
       headers.remove('Content-Type'); 
       
@@ -556,11 +609,26 @@ class ApiService {
       request.headers.addAll(headers);
       
       // Fields expected by usage
-      if (recipient.isNotEmpty) request.fields['recipient'] = recipient;
-      if (messageText != null && messageText.isNotEmpty) request.fields['message'] = messageText;
-      if (groupId != null && groupId.isNotEmpty) request.fields['group_id'] = groupId;
-      if (otherUserId != null && otherUserId.isNotEmpty) request.fields['recipient_id'] = otherUserId; // Map to what backend likely expects
-      if (repliedTo != null) request.fields['reply_to'] = repliedTo;
+      if (recipient.isNotEmpty) {
+        request.fields['recipient'] = recipient;
+        debugPrint('Added field: recipient = $recipient');
+      }
+      if (messageText != null && messageText.isNotEmpty) {
+        request.fields['message_text'] = messageText;
+        debugPrint('Added field: message_text = $messageText');
+      }
+      if (groupId != null && groupId.isNotEmpty) {
+        request.fields['group_id'] = groupId;
+        debugPrint('Added field: group_id = $groupId');
+      }
+      if (otherUserId != null && otherUserId.isNotEmpty) {
+        request.fields['recipient_id'] = otherUserId;
+        debugPrint('Added field: recipient_id = $otherUserId');
+      }
+      if (repliedTo != null) {
+        request.fields['reply_to'] = repliedTo;
+        debugPrint('Added field: reply_to = $repliedTo');
+      }
       
       // Handle File
       if (fileBytes != null && fileName != null) {
@@ -570,6 +638,7 @@ class ApiService {
           fileBytes,
           filename: fileName,
         ));
+        debugPrint('Added file from bytes: $fileName');
       } else if (filePath != null && filePath.isNotEmpty) {
         // Mobile/Desktop File Path
         request.files.add(await http.MultipartFile.fromPath(
@@ -577,15 +646,23 @@ class ApiService {
           filePath,
           filename: fileName,
         ));
+        debugPrint('Added file from path: $filePath');
       }
 
+      debugPrint('Sending request to backend...');
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
+      
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final result = jsonDecode(response.body);
+        debugPrint('=== sendMessageWithAttachment SUCCESS ===');
+        return result;
       }
       debugPrint('Failed to send message: ${response.statusCode} - ${response.body}');
+      debugPrint('=== sendMessageWithAttachment FAILED ===');
       return null;
     } catch (e) {
       debugPrint("Error sending message: $e");

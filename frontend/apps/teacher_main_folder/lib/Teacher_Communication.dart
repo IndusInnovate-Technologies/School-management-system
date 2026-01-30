@@ -61,8 +61,12 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
   
   // Chat
   final TextEditingController _messageController = TextEditingController();
+  List<File> _selectedFiles = [];
+  List<String> _selectedFileNames = [];
   RealtimeChatService? _chatService;
   StreamSubscription? _chatSubscription;
+  ChatMessage? _replyingTo; // For reply functionality
+  ChatMessage? _editingMessage; // For edit functionality
   
   // Global chat listener for unread counts
   RealtimeChatService? _globalChatService;
@@ -657,6 +661,11 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
               senderName: senderName,
               isSent: isSent,
               timestamp: msg['created_at'] as String? ?? DateTime.now().toUtc().toIso8601String(),
+              attachmentUrl: msg['attachment_url']?.toString(),
+              attachmentName: msg['attachment_name']?.toString(),
+              repliedToId: msg['replied_to_id']?.toString() ?? msg['replied_to']?.toString(),
+              repliedToSenderName: msg['replied_to_sender_name']?.toString(), // Parse updated field
+              repliedToText: msg['replied_to_text']?.toString(),             // Parse updated field
             );
           }).toList();
         });
@@ -1032,6 +1041,11 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
                         senderId: _currentTeacherUserId ?? '',
                         isSent: true,
                         timestamp: timestamp,
+                        attachmentUrl: data['attachment_url']?.toString(),
+                        attachmentName: data['attachment_name']?.toString(),
+                        repliedToId: data['replied_to_id']?.toString(),
+                        repliedToSenderName: data['replied_to_sender_name']?.toString(),
+                        repliedToText: data['replied_to_text']?.toString(),
                       );
                       debugPrint('Updated temp message with real ID: $messageId');
                     } else {
@@ -1045,6 +1059,11 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
                           senderId: _currentTeacherUserId ?? '',
                           isSent: true,
                           timestamp: timestamp,
+                          attachmentUrl: data['attachment_url']?.toString(),
+                          attachmentName: data['attachment_name']?.toString(),
+                          repliedToId: data['replied_to_id']?.toString(),
+                          repliedToSenderName: data['replied_to_sender_name']?.toString(),
+                          repliedToText: data['replied_to_text']?.toString(),
                         ));
                       }
                     }
@@ -1061,6 +1080,11 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
                         senderId: contact.id,
                         isSent: false,
                         timestamp: timestamp,
+                        attachmentUrl: data['attachment_url']?.toString(),
+                        attachmentName: data['attachment_name']?.toString(),
+                        repliedToId: data['replied_to_id']?.toString(),
+                        repliedToSenderName: data['replied_to_sender_name']?.toString(),
+                        repliedToText: data['replied_to_text']?.toString(),
                       ));
                     }
                   }
@@ -1099,6 +1123,244 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
         );
       }
     });
+  }
+
+  // Reply to a message
+  void _onReply(ChatMessage message) {
+    setState(() {
+      _replyingTo = message;
+      _editingMessage = null; // Clear editing mode when replying
+    });
+  }
+
+  // Edit a message
+  void _onEdit(ChatMessage message) {
+    setState(() {
+      _editingMessage = message;
+      _messageController.text = message.text;
+      _replyingTo = null; // Clear reply mode when editing
+    });
+  }
+
+  void _onDelete(ChatMessage message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Message?'),
+        content: const Text('This will remove the message for everyone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _softDeleteMessage(message);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _softDeleteMessage(ChatMessage message) async {
+    // Optimistic update
+    setState(() {
+      if (_messages[_selectedContactId] != null) {
+        _messages[_selectedContactId]!.removeWhere((m) => m.id == message.id);
+      }
+    });
+
+    final success = await api.ApiService.deleteMessage(message.id);
+    if (!success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete message')),
+        );
+        _loadData(); // Reload to restore state
+      }
+    }
+  }
+
+  Future<void> _pickAttachment() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.any,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          for (var file in result.files) {
+            if (file.path != null) {
+              _selectedFiles.add(File(file.path!));
+              _selectedFileNames.add(file.name);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking attachment: $e');
+    }
+  }
+
+  Future<void> _openCamera() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        setState(() {
+          _selectedFiles.add(File(image.path));
+          _selectedFileNames.add('camera_photo_${DateTime.now().millisecondsSinceEpoch}.jpg');
+        });
+      }
+    } catch (e) {
+      debugPrint('Error opening camera: $e');
+    }
+  }
+
+  // Build editing preview widget
+  Widget _buildEditingPreview() {
+    if (_editingMessage == null) return const SizedBox();
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(8),
+        border: const Border(
+          left: BorderSide(color: Colors.orange, width: 4)
+        )
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.edit, color: Colors.orange, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Edit Message',
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13
+                  )
+                ),
+                Text(
+                  _editingMessage!.text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12
+                  )
+                ),
+              ]
+            )
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16),
+            onPressed: () => setState(() {
+              _editingMessage = null;
+              _messageController.clear();
+            })
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build reply preview widget
+  Widget _buildReplyPreview() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(bottom: 8, left: 8, right: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: const Border(
+          left: BorderSide(color: Color(0xFF667eea), width: 4)
+        )
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _replyingTo!.senderId == _currentTeacherUserId 
+                    ? 'You' 
+                    : (_replyingTo!.senderName ?? 'User'),
+                  style: const TextStyle(
+                    color: Color(0xFF667eea),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13
+                  )
+                ),
+                Text(
+                  _replyingTo!.text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12
+                  )
+                ),
+              ]
+            )
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16),
+            onPressed: () => setState(() => _replyingTo = null)
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show message options menu (Reply, Edit, Delete)
+  void _showMessageOptions(ChatMessage message) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.reply),
+              title: const Text('Reply'),
+              onTap: () {
+                Navigator.pop(context);
+                _onReply(message);
+              },
+            ),
+            if (message.isSent) ...[
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _onEdit(message);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Delete', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _onDelete(message);
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   void _showCreateGroupDialog() {
@@ -1376,7 +1638,9 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
                       Expanded(
                         child: Text(
                           lastMessage != null 
-                              ? lastMessage.text
+                              ? (contact.type == ContactType.group
+                                  ? (lastMessage.senderId == _currentTeacherUserId ? 'You: ' : '${lastMessage.senderName ?? 'Member'}: ') + lastMessage.text
+                                  : lastMessage.text)
                               : (contact.type == ContactType.student
                                   ? '${contact.className ?? ''} ${contact.grade ?? ''}'.trim().isEmpty
                                       ? 'Student'
@@ -1647,61 +1911,62 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(25),
+              if (_editingMessage != null)
+                _buildEditingPreview(),
+              if (_replyingTo != null)
+                _buildReplyPreview(),
+              if (_selectedFileNames.isNotEmpty)
+                _buildFilePreview(),
+              Row(
+                children: [
+                  // Attachment button
+                  IconButton(
+                    icon: const Icon(Icons.attach_file, color: Color(0xFF667eea)),
+                    onPressed: _pickAttachment,
+                    tooltip: 'Attach file',
                   ),
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      hintStyle: TextStyle(color: Colors.grey[500]),
+                  // Camera button
+                  IconButton(
+                    icon: const Icon(Icons.camera_alt, color: Color(0xFF667eea)),
+                    onPressed: _openCamera,
+                    tooltip: 'Camera',
+                  ),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          hintText: 'Type a message...',
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          hintStyle: TextStyle(color: Colors.grey[500]),
+                        ),
+                        maxLines: null,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _sendMessage(),
+                      ),
                     ),
-                    maxLines: null,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) {
-                      // Send message - handled in ChatScreen widget (this method is deprecated)
-                    },
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Microphone button
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                  const SizedBox(width: 8),
+                  // Send button
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF667eea),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.send, color: Colors.white),
+                      onPressed: _sendMessage,
+                    ),
                   ),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.mic, color: Colors.white),
-                  onPressed: () {
-                    // Add voice message functionality
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Send button
-              Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFF667eea),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.send, color: Colors.white),
-                  onPressed: () {
-                    // Send message - handled in ChatScreen widget (this method is deprecated)
-                  },
-                ),
+                ],
               ),
             ],
           ),
@@ -1710,13 +1975,226 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
     );
   }
 
+  Widget _buildFilePreview() {
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _selectedFileNames.length,
+        itemBuilder: (context, index) {
+          final name = _selectedFileNames[index];
+          final isImage = name.toLowerCase().endsWith('.jpg') || 
+                          name.toLowerCase().endsWith('.jpeg') || 
+                          name.toLowerCase().endsWith('.png');
+          return Container(
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(isImage ? Icons.image : Icons.attach_file, 
+                     size: 16, color: const Color(0xFF667eea)),
+                const SizedBox(width: 4),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: Text(
+                    name,
+                    style: const TextStyle(fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedFiles.removeAt(index);
+                      _selectedFileNames.removeAt(index);
+                    });
+                  },
+                  child: const Icon(Icons.close, size: 16, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty && _selectedFiles.isEmpty) return;
+    
+    // Handle editing mode
+    if (_editingMessage != null) {
+      await _editMessageText(_editingMessage!, text);
+      _messageController.clear();
+      setState(() {
+        _editingMessage = null;
+      });
+      return;
+    }
+    
+    final List<File> filesToSend = List.from(_selectedFiles);
+    final List<String> fileNamesToSend = List.from(_selectedFileNames);
+    final replyId = _replyingTo?.id;
+    
+    // Clear state immediately
+    _messageController.clear();
+    setState(() {
+      _selectedFiles.clear();
+      _selectedFileNames.clear();
+      _replyingTo = null;
+    });
+
+    try {
+      if (text.isNotEmpty && filesToSend.isEmpty) {
+        await _sendSingleMessageInline(text: text, replyId: replyId);
+      } else if (filesToSend.isNotEmpty) {
+        for (int i = 0; i < filesToSend.length; i++) {
+          final file = filesToSend[i];
+          final fileName = fileNamesToSend[i];
+          final caption = (i == 0 && text.isNotEmpty) ? text : null;
+          
+          await _sendSingleMessageInline(
+            text: caption,
+            file: file,
+            fileName: fileName,
+            replyId: i == 0 ? replyId : null,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error sending message: $e');
+    }
+  }
+
+  Future<void> _sendSingleMessageInline({
+    String? text,
+    File? file,
+    String? fileName,
+    String? replyId,
+  }) async {
+    final contact = _contacts[_selectedContactId];
+    if (contact == null) return;
+
+    String? groupId;
+    String? otherUserId;
+    if (contact.type == ContactType.group) {
+      groupId = contact.id;
+    } else {
+      otherUserId = contact.id;
+    }
+
+    // Read file bytes for web platform
+    List<int>? fileBytes;
+    if (file != null && kIsWeb) {
+      try {
+        fileBytes = await file.readAsBytes();
+      } catch (e) {
+        debugPrint('Error reading file bytes: $e');
+      }
+    }
+
+    final response = await api.ApiService.sendMessageWithAttachment(
+      recipient: contact.type == ContactType.group ? '' : contact.username,
+      messageText: text,
+      filePath: kIsWeb ? null : file?.path,
+      fileBytes: fileBytes,
+      fileName: fileName,
+      messageType: file != null ? 
+          (fileName!.toLowerCase().endsWith('.jpg') || 
+           fileName.toLowerCase().endsWith('.jpeg') || 
+           fileName.toLowerCase().endsWith('.png') ? 'image' : 'file') : 'text',
+      groupId: groupId,
+      otherUserId: otherUserId,
+      repliedTo: replyId,
+    );
+    
+    if (response != null) {
+      _loadData(); // Refresh to show new message
+    }
+  }
+
+  // Edit message text
+  Future<void> _editMessageText(ChatMessage message, String newText) async {
+    if (newText.trim().isEmpty) return;
+    
+    try {
+      // Update UI optimistically
+      setState(() {
+        final contactId = _selectedContactId;
+        final list = _messages[contactId];
+        if (list != null) {
+          final idx = list.indexWhere((m) => m.id == message.id);
+          if (idx != -1) {
+            list[idx] = ChatMessage(
+              id: message.id,
+              text: newText,
+              senderId: message.senderId,
+              senderName: message.senderName,
+              isSent: message.isSent,
+              timestamp: message.timestamp,
+              attachmentUrl: message.attachmentUrl,
+              attachmentName: message.attachmentName,
+              repliedToId: message.repliedToId,
+              isRead: message.isRead,
+            );
+          }
+        }
+      });
+      
+      final success = await api.ApiService.editMessage(message.id, newText);
+      
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Message edited')),
+          );
+        }
+      } else {
+        throw Exception('Failed to edit');
+      }
+    } catch (e) {
+      debugPrint('Error editing message: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to edit message')),
+        );
+      }
+    }
+  }
+
   Widget _buildMessageBubble(ChatMessage message) {
     final contact = _contacts[_selectedContactId];
     final bool isGroup = contact?.type == ContactType.group;
     
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
+      child: Dismissible(
+        key: Key(message.id),
+        direction: DismissDirection.startToEnd,
+        confirmDismiss: (direction) async {
+          // Trigger reply when swiped right
+          _onReply(message);
+          return false; // Don't actually dismiss the message
+        },
+        background: Container(
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.only(left: 20),
+          child: const Icon(
+            Icons.reply,
+            color: Color(0xFF667eea),
+            size: 28,
+          ),
+        ),
+        child: Row(
         mainAxisAlignment: message.isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -1738,7 +2216,9 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
           ],
           // Message bubble
           Flexible(
-            child: Container(
+            child: GestureDetector(
+              onLongPress: () => _showMessageOptions(message),
+              child: Container(
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.75,
               ),
@@ -1785,35 +2265,89 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
                   ],
                   // Reply Snippet
                   if (message.repliedToId != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: message.isSent ? Colors.white.withOpacity(0.1) : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border(
-                          left: BorderSide(
-                            color: message.isSent ? Colors.white70 : const Color(0xFF667eea),
-                            width: 4,
+                    Builder(
+                      builder: (context) {
+                        // Determing sender name for the replied message
+                        String replySenderName = message.repliedToSenderName ?? "Unknown";
+                        String replyText = message.repliedToText ?? "";
+                        
+                        // Fallback to local lookup if fields are missing (backward compatibility)
+                        if (replySenderName == "Unknown" || replyText.isEmpty) {
+                           final conversationMessages = _messages[_selectedContactId] ?? [];
+                           final repliedMessage = conversationMessages.firstWhere(
+                             (m) => m.id == message.repliedToId,
+                             orElse: () => ChatMessage(
+                               id: 'unknown',
+                               text: 'Message not found',
+                               senderId: 'unknown',
+                               isSent: false,
+                               timestamp: '',
+                             ),
+                           );
+                           
+                           if (replySenderName == "Unknown") {
+                             if (repliedMessage.senderId == _currentTeacherUserId) {
+                               replySenderName = "You";
+                             } else if (repliedMessage.senderName != null) {
+                               replySenderName = repliedMessage.senderName!;
+                             } else if (contact != null && repliedMessage.senderId == contact.id) {
+                                replySenderName = contact.name;
+                             }
+                           }
+                           
+                           if (replyText.isEmpty) {
+                              replyText = repliedMessage.text.isNotEmpty 
+                                ? repliedMessage.text 
+                                : (repliedMessage.attachmentUrl != null ? '📷 Photo' : '');
+                           }
+                        }
+
+                          return Container(
+                          padding: const EdgeInsets.all(8),
+                          margin: const EdgeInsets.only(bottom: 8),
+                          // width: double.infinity, // Removed to allow bubble to shrink
+                          decoration: BoxDecoration(
+                            color: message.isSent ? Colors.black.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border(
+                              left: BorderSide(
+                                color: message.isSent ? Colors.white70 : const Color(0xFF667eea),
+                                width: 4,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      child: Text(
-                        'Replying to...', // We could fetch actual message text if needed
-                        style: TextStyle(
-                          color: message.isSent ? Colors.white70 : Colors.black54,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min, // Ensure minimum size
+                            children: [
+                              Text(
+                                replySenderName,
+                                style: TextStyle(
+                                  color: message.isSent ? Colors.white70 : const Color(0xFF667eea),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                replyText,
+                                style: TextStyle(
+                                  color: message.isSent ? Colors.white70 : Colors.black54,
+                                  fontSize: 12,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                     ),
                   ],
                   // Attachment
                   if (message.attachmentUrl != null) ...[
                     GestureDetector(
-                      onTap: () => _downloadAttachment(message),
+                      onTap: () => _showImageViewer(message),
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(8),
@@ -1875,7 +2409,61 @@ class _TeacherCommunicationScreenState extends State<TeacherCommunicationScreen>
               ),
             ),
           ),
-        ],
+        ),
+      ],
+      ),
+      ), // Close Dismissible
+    );
+  }
+
+  void _showImageViewer(ChatMessage message) {
+    if (message.attachmentUrl == null || message.attachmentUrl!.isEmpty) return;
+    
+    final isImage = message.attachmentUrl!.toLowerCase().endsWith('.jpg') ||
+                    message.attachmentUrl!.toLowerCase().endsWith('.jpeg') ||
+                    message.attachmentUrl!.toLowerCase().endsWith('.png') ||
+                    message.attachmentUrl!.toLowerCase().endsWith('.webp');
+
+    if (!isImage) {
+      _downloadAttachment(message);
+      return;
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+            title: Text(message.attachmentName ?? 'Image', style: const TextStyle(color: Colors.white)),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.download, color: Colors.white),
+                onPressed: () => _downloadAttachment(message),
+              ),
+            ],
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: message.attachmentUrl!.startsWith('http')
+                  ? Image.network(
+                      message.attachmentUrl!,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(child: CircularProgressIndicator(color: Colors.white));
+                      },
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 100, color: Colors.white),
+                    )
+                  : Image.file(File(message.attachmentUrl!), fit: BoxFit.contain),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1972,7 +2560,9 @@ class ChatMessage {
   final bool isRead;
   final String? attachmentUrl;
   final String? attachmentName;
-  final String? repliedToId; // Added for replies
+  final String? repliedToId;
+  final String? repliedToSenderName; // New field
+  final String? repliedToText;       // New field
 
   ChatMessage({
     required this.id,
@@ -1985,6 +2575,8 @@ class ChatMessage {
     this.attachmentUrl,
     this.attachmentName,
     this.repliedToId,
+    this.repliedToSenderName,
+    this.repliedToText,
   });
 }
 
@@ -2259,6 +2851,18 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
                             itemBuilder: (context, index) {
                               final contact = _filteredContacts[index];
                               final isSelected = _selectedIds.contains(contact.id);
+                              
+                              String subtitle = '';
+                              if (contact.type == ContactType.teacher) {
+                                subtitle = 'Teacher';
+                                if (contact.subject != null && contact.subject!.isNotEmpty) {
+                                  subtitle += ': ${contact.subject}';
+                                }
+                              } else {
+                                subtitle = '${contact.className ?? ''} ${contact.grade ?? ''}'.trim();
+                                if (subtitle.isEmpty) subtitle = 'Student';
+                              }
+                              
                               return CheckboxListTile(
                                 value: isSelected,
                                 onChanged: _isCreating ? null : (checked) {
@@ -2276,10 +2880,8 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
                                   style: const TextStyle(fontWeight: FontWeight.w500),
                                 ),
                                 subtitle: Text(
-                                  '${contact.className ?? ''} ${contact.grade ?? ''}'.trim().isEmpty
-                                      ? 'Student'
-                                      : '${contact.className ?? ''} ${contact.grade ?? ''}'.trim(),
-                                  style: TextStyle(color: Colors.grey[600]),
+                                  subtitle,
+                                  style: TextStyle(color: contact.type == ContactType.teacher ? Colors.green[700] : Colors.grey[600]),
                                 ),
                                 secondary: CircleAvatar(
                                   backgroundColor: Colors.grey[200],
@@ -2379,19 +2981,6 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
       if (data.isNotEmpty) {
         setState(() {
           _members = List<Map<String, dynamic>>.from(data);
-          // extraction of group_name or created_by is confusing here because getGroupMembers only returns members list.
-          // We likely cannot get group_name or created_by from getGroupMembers(groupId).
-          // We should probably remove that logic or fetch group details separately if needed.
-          // For now, I'll comment out the invalid extraction to fix complication.
-          /*
-          _currentName = data['group_name'] ?? _currentName;
-          final creator = data['created_by'];
-          if (creator != null && creator.toString().toLowerCase() != 'null') {
-            _createdBy = creator.toString();
-          } else {
-            _createdBy = data['created_by_name']?.toString();
-          }
-          */
         });
       }
     } catch (e) {
@@ -2587,7 +3176,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                       itemCount: _members.length,
                       itemBuilder: (context, index) {
                         final member = _members[index];
-                        // Build name from parts, filtering out null/None values
+                        // Build name
                         String name = '';
                         final firstName = member['first_name'];
                         final lastName = member['last_name'];
@@ -2600,7 +3189,6 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                           name += lastName.toString();
                         }
                         
-                        // Fallback to full_name or username if name is still empty
                         if (name.isEmpty) {
                           final fullName = member['full_name'];
                           if (fullName != null && fullName.toString().toLowerCase() != 'null' && fullName.toString().toLowerCase() != 'none') {
@@ -2615,85 +3203,54 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
                         final grade = member['grade'];
                         
                          final role = member['role']?.toString().toLowerCase() ?? '';
-
                          final subject = member['subject']?.toString();
 
-                         
-
                           String sub = '';
-
                           Color? subColor;
 
-                          
-
                           // Check if member is a teacher
-
                           if (role.contains('teacher') || (subject != null && subject.toLowerCase() != 'null' && subject.isNotEmpty)) {
-
-                            // Teacher display: "Teacher: Subject"
-
                             sub = 'Teacher';
-
                             if (subject != null && subject.toLowerCase() != 'null' && subject.isNotEmpty) {
-
                               sub += ': $subject';
-
                             }
-
                             subColor = Colors.green[700];
-
                           } else {
-
-                            // Student display: "Class X-A • Grade Y"
-
-                            if (className != null && className.toString().toLowerCase() != 'null') {
-
-                              sub = 'Class $className';
-
-                              if (section != null && section.toString().toLowerCase() != 'null') sub += '-$section';
-
-                            }
-
-                            if (grade != null && grade.toString().toLowerCase() != 'null') {
-
-                              if (sub.isNotEmpty) sub += ' • ';
-
-                              sub += 'Grade $grade';
-
-                            }
-
-                            subColor = Colors.orange[700];
-
+                             // Student
+                             if (grade != null && grade.toString().toLowerCase() != 'null') sub = grade.toString();
+                             else if (className != null && className.toString().toLowerCase() != 'null') sub = className.toString();
+                             
+                             if (section != null && section.toString().toLowerCase() != 'null') {
+                               if (sub.isNotEmpty) sub += ' - $section';
+                               else sub = section.toString();
+                             }
+                             subColor = Colors.blue[700];
                           }
+                        
+                        final userId = member['user_id'].toString();
+                        
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.grey[200],
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : '?',
+                              style: TextStyle(color: Colors.grey[800]),
+                            ),
+                          ),
+                          title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                          subtitle: sub.isNotEmpty 
+                            ? Text(sub, style: TextStyle(color: subColor, fontSize: 12))
+                            : null,
+                          trailing: (!widget.isReadOnly && userId != _createdBy) // Cannot remove creator?
+                                    ? IconButton(
+                                        icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                        onPressed: () => _removeMember(userId, name),
+                                      )
+                                    : null,
+                        );
 
 
 
-                         return ListTile(
-                           leading: CircleAvatar(
-                             backgroundColor: Colors.grey[300],
-                             child: Text(
-                               name.isNotEmpty ? name[0].toUpperCase() : '?',
-                               style: const TextStyle(color: Colors.black87),
-                             ),
-                           ),
-                           title: Text(name),
-                           subtitle: sub.isNotEmpty ? Text(
-                              sub,
-                              style: TextStyle(
-                                color: subColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ) : null,
-                           trailing: widget.isReadOnly ? null : PopupMenuButton<String>(
-                             onSelected: (val) => _removeMember(member['user_id'].toString(), name),
-                             itemBuilder: (context) => [
-                               const PopupMenuItem(
-                                 value: 'remove',
-                                 child: Text('Remove from Group', style: TextStyle(color: Colors.red)),
-                               ),
-                             ],
-                           ),
-                         );
                       },
                     ),
             ),
@@ -2788,6 +3345,7 @@ class _ChatScreenState extends State<_ChatScreen> {
   List<File> _selectedFiles = [];
   List<String> _selectedFileNames = [];
   ChatMessage? _replyingTo; // Track message being replied to
+  ChatMessage? _editingMessage; // Track message being edited
 
   @override
   void initState() {
@@ -2997,8 +3555,18 @@ class _ChatScreenState extends State<_ChatScreen> {
   void _onReply(ChatMessage message) {
     setState(() {
       _replyingTo = message;
+      _editingMessage = null; // Clear editing mode when replying
     });
     // Focus text field handled by UI update
+  }
+
+  // Edit a message
+  void _onEdit(ChatMessage message) {
+    setState(() {
+      _editingMessage = message;
+      _messageController.text = message.text;
+      _replyingTo = null; // Clear reply mode when editing
+    });
   }
 
   void _onDelete(ChatMessage message) {
@@ -3055,7 +3623,24 @@ class _ChatScreenState extends State<_ChatScreen> {
                 _onReply(message);
               },
             ),
-            if (message.isSent) // Only delete own messages check
+            if (message.attachmentUrl != null && message.attachmentUrl!.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.download),
+                title: const Text('Download'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _downloadAttachment(message);
+                },
+              ),
+            if (message.isSent) ...[
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _onEdit(message);
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -3064,12 +3649,65 @@ class _ChatScreenState extends State<_ChatScreen> {
                   _onDelete(message);
                 },
               ),
+            ],
           ],
         ),
       ),
     );
   }
 
+
+  void _showImageViewer(ChatMessage message) {
+    if (message.attachmentUrl == null || message.attachmentUrl!.isEmpty) return;
+    
+    final isImage = message.attachmentUrl!.toLowerCase().endsWith('.jpg') ||
+                    message.attachmentUrl!.toLowerCase().endsWith('.jpeg') ||
+                    message.attachmentUrl!.toLowerCase().endsWith('.png') ||
+                    message.attachmentUrl!.toLowerCase().endsWith('.webp');
+
+    if (!isImage) {
+      _downloadAttachment(message);
+      return;
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+            title: Text(message.attachmentName ?? 'Image', style: const TextStyle(color: Colors.white)),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.download, color: Colors.white),
+                onPressed: () => _downloadAttachment(message),
+              ),
+            ],
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4,
+              child: message.attachmentUrl!.startsWith('http')
+                  ? Image.network(
+                      message.attachmentUrl!,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 100, color: Colors.white),
+                    )
+                  : Image.file(File(message.attachmentUrl!), fit: BoxFit.contain),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _downloadAttachment(ChatMessage message) async {
     if (message.attachmentUrl == null || message.attachmentUrl!.isEmpty) return;
@@ -3195,8 +3833,9 @@ class _ChatScreenState extends State<_ChatScreen> {
   }
 
   Future<void> _openCamera() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.camera);
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.camera);
     if (image != null) {
       // Show WhatsApp-like preview dialog
       if (!mounted) return;
@@ -3243,11 +3882,29 @@ class _ChatScreenState extends State<_ChatScreen> {
         _sendMessage();
       }
     }
+    } catch (e) {
+      debugPrint('Error opening camera: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open camera: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty && _selectedFiles.isEmpty) return;
+    
+    // Handle editing mode
+    if (_editingMessage != null) {
+      await _editMessageText(_editingMessage!, text);
+      _messageController.clear();
+      setState(() {
+        _editingMessage = null;
+      });
+      return;
+    }
     
     final List<File> filesToSend = List.from(_selectedFiles);
     final List<String> fileNamesToSend = List.from(_selectedFileNames);
@@ -3278,6 +3935,51 @@ class _ChatScreenState extends State<_ChatScreen> {
           file: file,
           fileName: fileName,
           replyId: i == 0 ? replyId : null, // Only apply reply to the first message/file
+        );
+      }
+    }
+  }
+
+  // Edit message text
+  Future<void> _editMessageText(ChatMessage message, String newText) async {
+    if (newText.trim().isEmpty) return;
+    
+    try {
+      // Update UI optimistically
+      setState(() {
+        final idx = _messages.indexWhere((m) => m.id == message.id);
+        if (idx != -1) {
+          _messages[idx] = ChatMessage(
+            id: message.id,
+            text: newText,
+            senderId: message.senderId,
+            senderName: message.senderName,
+            isSent: message.isSent,
+            timestamp: message.timestamp,
+            attachmentUrl: message.attachmentUrl,
+            attachmentName: message.attachmentName,
+            repliedToId: message.repliedToId,
+            isRead: message.isRead,
+          );
+        }
+      });
+      
+      final success = await api.ApiService.editMessage(message.id, newText);
+      
+      if (!success) {
+        throw Exception('Failed to edit on backend');
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Message edited')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error editing message: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to edit message')),
         );
       }
     }
@@ -3416,6 +4118,58 @@ class _ChatScreenState extends State<_ChatScreen> {
     } catch (e) {
       return timestamp;
     }
+  }
+
+  // Build editing preview widget
+  Widget _buildEditingPreview() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(bottom: 8, left: 8, right: 8),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(8),
+        border: const Border(
+          left: BorderSide(color: Colors.orange, width: 4)
+        )
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.edit, color: Colors.orange, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Edit Message',
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13
+                  )
+                ),
+                Text(
+                  _editingMessage!.text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12
+                  )
+                ),
+              ]
+            )
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16),
+            onPressed: () => setState(() {
+              _editingMessage = null;
+              _messageController.clear();
+            })
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -3572,6 +4326,8 @@ class _ChatScreenState extends State<_ChatScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (_editingMessage != null)
+                  _buildEditingPreview(),
                 if (_replyingTo != null)
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -3815,6 +4571,7 @@ class _ChatScreenState extends State<_ChatScreen> {
           Flexible(
             child: GestureDetector(
               onLongPress: () => _showMessageOptions(message),
+              onSecondaryTap: () => _showMessageOptions(message),
               child: Container(
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.65,
@@ -3867,7 +4624,7 @@ class _ChatScreenState extends State<_ChatScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: GestureDetector(
-                          onTap: () => _downloadAttachment(message),
+                          onTap: () => _showImageViewer(message),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: message.attachmentUrl!.startsWith('http')

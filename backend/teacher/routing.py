@@ -10,4 +10,12 @@ websocket_urlpatterns = [
         r'ws/teacher-parent/(?P<room_id>[^/]+)/$', 
         TeacherStudentChatConsumer.as_asgi()
     ),
+    re_path(
+        r'ws/group/(?P<room_id>[^/]+)/$', 
+        TeacherStudentChatConsumer.as_asgi()
+    ),
+    re_path(
+        r'ws/user/(?P<user_id>[^/]+)/$', 
+        TeacherStudentChatConsumer.as_asgi()
+    ),
 ]

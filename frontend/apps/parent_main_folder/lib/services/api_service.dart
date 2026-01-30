@@ -678,4 +678,18 @@ class ApiService {
         return await http.get(url, headers: headers);
     }
   }
+  static Future<bool> editMessage(String messageId, String newText) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.patch(
+        Uri.parse('http://127.0.0.1:8000/api/student-parent/chat-messages/$messageId/'),
+        headers: headers,
+        body: jsonEncode({'message_text': newText}),
+      );
+      return resp.statusCode == 200;
+    } catch (e) {
+      print('Error editing message: $e');
+      return false;
+    }
+  }
 }

@@ -790,13 +790,66 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
                 }
             
             async_to_sync(channel_layer.group_send)(group_name, broadcast_data)
-            
         except Exception as e:
-            # Don't fail the request if broadcasting fails
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to broadcast chat message: {str(e)}")
-    
+            
+    def perform_update(self, serializer):
+        """
+        Handle message updates (edits) and broadcast the change.
+        """
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        
+        instance = serializer.save()
+        
+        # Broadcast the update
+        try:
+            channel_layer = get_channel_layer()
+            
+            # Get sender name
+            sender_name = instance.sender.username
+            if instance.sender.first_name or instance.sender.last_name:
+                sender_name = f"{instance.sender.first_name or ''} {instance.sender.last_name or ''}".strip() or instance.sender.username
+
+            # Determine room/group
+            if instance.group:
+                group_name = f'group_{instance.group.group_id}'
+                broadcast_data = {
+                    'type': 'chat.message_edited', # Custom type for edits
+                    'message_id': str(instance.message_id),
+                    'message': instance.message_text,
+                    'timestamp': instance.created_at.isoformat(),
+                    'sender_id': str(instance.sender.user_id),
+                }
+            else:
+                # 1-to-1
+                s_name = self._normalize_name(instance.sender.username)
+                r_name = self._normalize_name(instance.recipient.username)
+                usernames = sorted([s_name, r_name])
+                room_id = "_".join(usernames)
+                
+                # Simple check for chat type (matching perform_create)
+                chat_type = 'teacher-student'
+                # Note: This check is a bit redundant but stays consistent
+                group_name = f'{chat_type}_{room_id}'
+                
+                broadcast_data = {
+                    'type': 'chat.message_edited',
+                    'message_id': str(instance.message_id),
+                    'message': instance.message_text,
+                    'timestamp': instance.created_at.isoformat(),
+                    'sender_id': str(instance.sender.user_id),
+                }
+            
+            async_to_sync(channel_layer.group_send)(group_name, broadcast_data)
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to broadcast chat message edit: {str(e)}")
+
     @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):
         """Mark chat message as read"""
@@ -891,14 +944,20 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
             
             if not last_msg:
                 continue
-                
-            # Get unread count (messages sent BY contact TO user that are unread)
-            unread_count = ChatMessage.objects.filter(
-                sender=contact,
-                recipient=user,
-                is_read=False,
-                is_deleted=False
-            ).count()
+            
+            # WhatsApp-style unread count: only show if last message was FROM contact TO user
+            # This prevents showing unread badge when user sent the most recent message
+            if last_msg.sender == contact and last_msg.recipient == user:
+                # Last message was from contact to user - show unread count
+                unread_count = ChatMessage.objects.filter(
+                    sender=contact,
+                    recipient=user,
+                    is_read=False,
+                    is_deleted=False
+                ).count()
+            else:
+                # Last message was from user to contact - don't show unread badge
+                unread_count = 0
             
             # Serialize contact (basic info)
             contact_data = {
@@ -2188,3 +2247,113 @@ def school_details(request):
             {'error': 'Failed to fetch school details'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+class ChatGroupViewSet(viewsets.ModelViewSet):
+    """ViewSet for Chat Groups"""
+    queryset = ChatGroup.objects.all()
+    serializer_class = ChatGroupSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter groups where user is a member"""
+        return ChatGroup.objects.filter(
+            members=self.request.user
+        ).distinct().order_by('-created_at')
+    
+    @action(detail=False, methods=['get', 'post'])
+    def groups(self, request):
+        """
+        GET: List groups with last message and unread count.
+        POST: Create a new group.
+        """
+        if request.method == 'POST':
+            # Create new group
+            serializer = ChatGroupSerializer(data=request.data)
+            if serializer.is_valid():
+                # Save group and add creator as member
+                group = serializer.save(created_by=request.user)
+                
+                # Add members from request data
+                member_ids = request.data.get('member_ids', [])
+                if member_ids:
+                    from main_login.models import User
+                    members = User.objects.filter(user_id__in=member_ids)
+                    group.members.add(*members)
+                
+                # Always add creator as member
+                group.members.add(request.user)
+                
+                return Response(
+                    ChatGroupSerializer(group).data,
+                    status=status.HTTP_201_CREATED
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # GET request - list groups
+        user = request.user
+        from django.db.models import Q, Max, Count
+        
+        # Get all groups where user is a member
+        groups = self.get_queryset()
+        
+        result = []
+        for group in groups:
+            # Get last message in this group
+            last_msg = ChatMessage.objects.filter(
+                group=group,
+                is_deleted=False
+            ).order_by('-created_at').first()
+            
+            # Get unread count (messages in this group not sent by user that are unread)
+            unread_count = ChatMessage.objects.filter(
+                group=group,
+                is_read=False,
+                is_deleted=False
+            ).exclude(sender=user).count()
+            
+            group_data = ChatGroupSerializer(group).data
+            group_data['last_message'] = ChatMessageSerializer(last_msg).data if last_msg else None
+            group_data['unread_count'] = unread_count
+            group_data['timestamp'] = last_msg.created_at if last_msg else group.created_at
+            
+            result.append(group_data)
+        
+        # Sort by timestamp desc
+        result.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        return Response(result)
+    
+    @action(detail=True, methods=['post'], url_path='mark_read')
+    def mark_group_read(self, request, pk=None):
+        """
+        Mark all messages in a group as read for the current user.
+        """
+        import logging
+        from django.utils import timezone
+        logger = logging.getLogger(__name__)
+        
+        group = self.get_object()
+        
+        # Verify user is a member
+        if not group.members.filter(user_id=request.user.user_id).exists():
+            return Response(
+                {'error': 'You are not a member of this group'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Mark all unread messages in this group (not sent by current user) as read
+        updated_count = ChatMessage.objects.filter(
+            group=group,
+            is_read=False
+        ).exclude(sender=request.user).update(
+            is_read=True,
+            read_at=timezone.now()
+        )
+        
+        logger.info(f'Marked {updated_count} messages as read in group {group.group_id} for user {request.user.username}')
+        
+        return Response({
+            'status': 'success',
+            'messages_marked_read': updated_count
+        }, status=status.HTTP_200_OK)

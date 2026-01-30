@@ -93,6 +93,7 @@ class EnterResultsScreen extends StatefulWidget {
 class _EnterResultsScreenState extends State<EnterResultsScreen> {
   // Real Data
   List<Class> _classes = [];
+  List<String> _availableSubjects = [];
 
   // Form State
   String? _selectedClassId;
@@ -120,6 +121,7 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
   void initState() {
     super.initState();
     _loadClasses();
+    _loadSubjects();
   }
   
   static String _getTodayDate() {
@@ -152,16 +154,55 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
       });
     } catch (e) {
       debugPrint('Error loading classes: $e');
-      _showSnackBar('Failed to load classes (Using offline data)', isError: true);
+      _showSnackBar('Using offline data due to connection issue', isError: false);
       // Fallback Mock Data for testing/offline usage
       setState(() {
         _classes = [
-          Class('1', 'Class 1', 'A', ['Math', 'English']),
-          Class('2', 'Class 1', 'B', ['Math', 'English']),
-          Class('3', 'Class 2', 'A', ['Science', 'History']),
-          Class('4', 'Class 10', 'A', ['Physics', 'Chemistry', 'Math']),
-          Class('5', 'Class 10', 'B', ['Physics', 'Chemistry', 'Biology']),
+          Class('1', 'Nursery', 'A', ['General']),
+          Class('2', 'LKG', 'A', ['General']),
+          Class('3', 'UKG', 'A', ['General']),
+          Class('4', 'Class 1', 'A', ['Math', 'English', 'EVS']),
+          Class('5', 'Class 2', 'A', ['Math', 'English', 'EVS']),
+          Class('6', 'Class 3', 'A', ['Math', 'English', 'Science', 'Social']),
+          Class('7', 'Class 4', 'A', ['Math', 'English', 'Science', 'Social']),
+          Class('8', 'Class 5', 'A', ['Math', 'English', 'Science', 'Social']),
+          Class('9', 'Class 6', 'A', ['Math', 'English', 'Science', 'Social']),
+          Class('10', 'Class 7', 'A', ['Math', 'English', 'Science', 'Social']),
+          Class('11', 'Class 8', 'A', ['Math', 'English', 'Science', 'Social']),
+          Class('12', 'Class 9', 'A', ['Math', 'English', 'Science', 'Social']),
+          Class('13', 'Class 10', 'A', ['Math', 'English', 'Science', 'Social']),
+          Class('14', 'Class 11', 'A', ['Physics', 'Chemistry', 'Math', 'Biology']),
+          Class('15', 'Class 12', 'A', ['Physics', 'Chemistry', 'Math', 'Biology']),
         ];
+      });
+    }
+  }
+
+  Future<void> _loadSubjects() async {
+    try {
+      final data = await api.ApiService.fetchDepartments();
+      if (data.isEmpty) throw Exception('No departments fetched');
+      
+      setState(() {
+        _availableSubjects = data.map<String>((json) {
+          // Assuming department name is the subject
+          return json['name']?.toString() ?? 'General';
+        }).toList();
+        
+        // Ensure we have unique subjects
+        _availableSubjects = _availableSubjects.toSet().toList();
+        _availableSubjects.sort();
+      });
+    } catch (e) {
+      debugPrint('Error loading subjects: $e');
+      // Fallback subjects if API fails
+      setState(() {
+        _availableSubjects = [
+          'Mathematics', 'Science', 'English', 'History', 
+          'Geography', 'Physics', 'Chemistry', 'Biology', 
+          'Computer Science', 'Physical Education', 'Hindi', 'Art'
+        ];
+        _availableSubjects.sort();
       });
     }
   }
@@ -596,10 +637,10 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
                           : constraints.maxWidth,
                       child: _buildDropdownField(
                         'Select Subject',
-                        _selectedClass != null ? _selectedClass!.subjects : [],
+                        _availableSubjects.isNotEmpty ? _availableSubjects : ['General'],
                         (value) => setState(() => _selectedSubject = value),
                         _selectedSubject,
-                        isEnabled: _selectedClassId != null,
+                        isEnabled: true, // Always enabled as it comes from global list
                       ),
                     ),
                     // Exam Type Dropdown
@@ -1114,6 +1155,11 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
     String? selectedValue, {
     bool isEnabled = true,
   }) {
+    // Ensure valid value (prevent crash if selected value is not in items)
+    final validValue = (selectedValue != null && items.contains(selectedValue))
+        ? selectedValue
+        : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1126,7 +1172,7 @@ class _EnterResultsScreenState extends State<EnterResultsScreen> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          initialValue: selectedValue,
+          value: validValue,
           isExpanded: true,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
