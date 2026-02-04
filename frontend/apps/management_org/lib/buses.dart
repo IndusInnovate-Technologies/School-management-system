@@ -26,9 +26,10 @@ class BusStop {
 }
 
 class Bus {
-  final String id; // Changed to String to store UUID
+  final String id;
   final String busNumber;
   final String driverName;
+  final String driverEmail;
   final String driverPhone;
   final String route;
   final int stops;
@@ -44,6 +45,7 @@ class Bus {
     required this.id,
     required this.busNumber,
     required this.driverName,
+    required this.driverEmail,
     required this.driverPhone,
     required this.route,
     required this.stops,
@@ -119,6 +121,7 @@ class _BusesManagementPageState extends State<BusesManagementPage> {
             id: busId,
             busNumber: busMap['bus_number'] ?? '',
             driverName: busMap['driver_name'] ?? '',
+            driverEmail: busMap['driver_email']?.toString() ?? '',
             driverPhone: busMap['driver_phone'] ?? '',
             route: busMap['route_name'] ?? '',
             stops: 0,
@@ -142,6 +145,7 @@ class _BusesManagementPageState extends State<BusesManagementPage> {
           id: busId,
           busNumber: busDetails.busNumber,
           driverName: busDetails.driverName,
+          driverEmail: busDetails.driverEmail,
           driverPhone: busDetails.driverPhone,
           route: busDetails.routeName,
           stops: busDetails.totalStops,
@@ -152,12 +156,12 @@ class _BusesManagementPageState extends State<BusesManagementPage> {
           status: busDetails.isActive ? 'Active' : 'Inactive',
           routeStops: busDetails.morningStops.map((stop) => BusStop(
             name: stop.stopName,
-            time: stop.stopTime ?? '00:00',
+            time: formatTime24To12h(stop.stopTime),
             students: stop.students.length,
           )).toList(),
           returnStops: busDetails.afternoonStops.map((stop) => BusStop(
             name: stop.stopName,
-            time: stop.stopTime ?? '00:00',
+            time: formatTime24To12h(stop.stopTime),
             students: stop.students.length,
           )).toList(),
         );
@@ -270,14 +274,6 @@ class _BusesManagementPageState extends State<BusesManagementPage> {
                                   },
                                   tooltip: 'Edit Bus',
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.people, color: Colors.white),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                    _manageStudents(bus);
-                                  },
-                                  tooltip: 'Manage Students',
-                                ),
                               ],
                               IconButton(
                                 icon: const Icon(Icons.close, color: Colors.white),
@@ -374,6 +370,7 @@ class _BusesManagementPageState extends State<BusesManagementPage> {
           title: 'Driver Information',
           items: [
             'Name: ${bus.driverName}',
+            if (bus.driverEmail.isNotEmpty) 'Email: ${bus.driverEmail}',
             'Phone: ${bus.driverPhone}',
             'Route: ${bus.route}',
             'Stops: ${bus.stops}',
@@ -651,41 +648,38 @@ class _BusesManagementPageState extends State<BusesManagementPage> {
   }
 
   void _deleteBus(Bus bus) {
+    final messenger = ScaffoldMessenger.of(context);
     showDialog<void>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Confirm Deletion'),
           content: Text('Delete ${bus.busNumber}?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
                 try {
                   await _apiService.initialize();
                   final response = await _apiService.delete('${Endpoints.buses}${bus.id}/');
-                  
+                  if (!mounted) return;
                   if (response.success) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Bus deleted successfully!')),
-                      );
-                      _loadBuses(); // Refresh the list
-                    }
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Bus deleted successfully!')),
+                    );
+                    _loadBuses();
                   } else {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error deleting bus: ${response.error ?? "Unknown error"}')),
-                      );
-                    }
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('Error deleting bus: ${response.error ?? "Unknown error"}')),
+                    );
                   }
                 } catch (e) {
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(content: Text('Error deleting bus: ${e.toString()}')),
                     );
                   }

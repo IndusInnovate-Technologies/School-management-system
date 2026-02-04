@@ -17,6 +17,7 @@ urlpatterns = [
     path('api/management-admin/', include('management_admin.urls')),
     path('api/teacher/', include('teacher.urls')),
     path('api/student-parent/', include('student_parent.urls')),
+    path('api/driver/', include('driver.urls')),
 ]
 
 # Serve media files in development

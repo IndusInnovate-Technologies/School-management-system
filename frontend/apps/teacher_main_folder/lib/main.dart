@@ -24,6 +24,9 @@ import 'Teacher_Projects.dart';
 import 'Teacher_Tasks.dart';
 import 'teacher_homework.dart'; // Added this
 import 'services/api_service.dart' as api;
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'services/fcm_service.dart';
 // Removed: import 'screens/stat_detail.dart';
 // Definition for StatDetailScreen added below main file.
 
@@ -233,9 +236,14 @@ DashboardData _emptyDashboardData() {
 }
 
 // --- MAIN WIDGET ---
-void main() {
-  // Ensure Flutter binding is initialized before runApp to prevent lifecycle channel warnings
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    debugPrint('Firebase init (optional): $e');
+  }
   runApp(const TeacherDashboardApp());
 }
 
@@ -277,6 +285,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _schoolName;
   String? _schoolId;
   String? _logoUrl; // Added logo URL
+  int _notificationUnreadCount = 0;
 
   @override
   void initState() {
@@ -284,6 +293,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadCachedSchoolDetails();
     _dashboardData = fetchDashboardData();
     _loadTeacherProfile();
+    _initFcm();
+    _loadNotificationCount();
+  }
+
+  Future<void> _loadNotificationCount() async {
+    try {
+      final data = await api.ApiService.getMyPushNotifications();
+      if (mounted) setState(() => _notificationUnreadCount = data['unread_count'] as int? ?? 0);
+    } catch (_) {}
+  }
+
+  void _openNotificationsPanel() async {
+    await api.ApiService.markMyPushNotificationsRead();
+    if (mounted) setState(() => _notificationUnreadCount = 0);
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (ctx) => _TeacherNotificationsPanel(
+        onClose: () => Navigator.pop(ctx),
+      ),
+    );
+  }
+
+  Future<void> _initFcm() async {
+    try {
+      await FcmService.requestPermission();
+      FcmService.setupHandlers();
+      await FcmService.registerTokenIfNeeded();
+    } catch (e) {
+      debugPrint('FCM init: $e');
+    }
   }
 
   Future<void> _loadTeacherProfile() async {
@@ -2100,31 +2141,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Avatar with Navigation
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TeacherProfilePage(),
-                      ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(30),
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
-                    ),
-                    child: const CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Color(0xFFE1BEE7),
-                      child: Text('👩‍🏫', style: TextStyle(fontSize: 22)),
-                    ),
-                  ),
+              // Notification icon (last right before avatar)
+              IconButton(
+                onPressed: _openNotificationsPanel,
+                icon: Badge(
+                  isLabelVisible: _notificationUnreadCount > 0,
+                  label: Text('$_notificationUnreadCount'),
+                  child: const Icon(Icons.notifications_none, color: Colors.white, size: 26),
                 ),
               ),
               const SizedBox(width: 20),
@@ -2983,6 +3006,119 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // Removed: Chat methods moved to TeacherCommunicationScreen
+}
+
+// Notifications panel (push notifications from management)
+class _TeacherNotificationsPanel extends StatefulWidget {
+  final VoidCallback onClose;
+
+  const _TeacherNotificationsPanel({required this.onClose});
+
+  @override
+  State<_TeacherNotificationsPanel> createState() => _TeacherNotificationsPanelState();
+}
+
+class _TeacherNotificationsPanelState extends State<_TeacherNotificationsPanel> {
+  List<Map<String, dynamic>> _notifications = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final data = await api.ApiService.getMyPushNotifications();
+    if (mounted) {
+      setState(() {
+        _notifications = data['notifications'] as List<Map<String, dynamic>>;
+        _loading = false;
+      });
+    }
+  }
+
+  static String _formatTime(dynamic value) {
+    if (value == null) return '—';
+    if (value is String) {
+      try {
+        final d = DateTime.tryParse(value);
+        if (d != null) {
+          final now = DateTime.now();
+          final diff = now.difference(d);
+          if (diff.inDays > 0) return '${diff.inDays}d ago';
+          if (diff.inHours > 0) return '${diff.inHours}h ago';
+          if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+          return 'Just now';
+        }
+      } catch (_) {}
+    }
+    return '—';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const fixedHeight = 420.0;
+    final maxH = MediaQuery.of(context).size.height * 0.85;
+    final height = fixedHeight > maxH ? maxH : fixedHeight;
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: BoxConstraints(maxWidth: 400, maxHeight: height),
+          height: height,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: Colors.black26, blurRadius: 12, offset: const Offset(0, 4)),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Notifications', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    IconButton(onPressed: widget.onClose, icon: const Icon(Icons.close)),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: _loading
+                    ? const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+                    : _notifications.isEmpty
+                        ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No notifications yet')))
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            itemCount: _notifications.length,
+                            itemBuilder: (context, index) {
+                              final n = _notifications[index];
+                              final title = n['title'] as String? ?? '—';
+                              final body = n['body'] as String? ?? '';
+                              final createdAt = _formatTime(n['created_at']);
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: ListTile(
+                                  leading: const CircleAvatar(child: Icon(Icons.notifications, color: Colors.white), backgroundColor: Color(0xFF667eea)),
+                                  title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  subtitle: Text('${body.isNotEmpty ? body : ''}\n$createdAt', maxLines: 2, overflow: TextOverflow.ellipsis),
+                                ),
+                              );
+                            },
+                          ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // --- CUSTOM PAINTERS FOR CHARTS ---

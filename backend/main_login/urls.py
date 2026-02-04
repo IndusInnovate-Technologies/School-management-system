@@ -31,5 +31,13 @@ urlpatterns = [
     
     # Roles
     path('roles/', views.RoleListView.as_view(), name='roles_list'),
+
+    # FCM push notification device registration
+    path('fcm/register/', views.fcm_register, name='fcm_register'),
+    path('fcm/unregister/', views.fcm_unregister, name='fcm_unregister'),
+
+    # My push notifications (student/parent and teacher portals)
+    path('my-push-notifications/', views.my_push_notifications, name='my_push_notifications'),
+    path('my-push-notifications/mark-read/', views.my_push_notifications_mark_read, name='my_push_notifications_mark_read'),
 ]
 

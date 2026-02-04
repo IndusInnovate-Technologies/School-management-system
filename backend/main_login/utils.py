@@ -80,7 +80,16 @@ def get_user_school_id(user):
             return fin_details.school_id
     except Exception:
         pass
-    
+
+    # Check if user is a driver (bus assigned to a school)
+    try:
+        from management_admin.models import Driver
+        driver = Driver.objects.filter(user=user).select_related('bus', 'bus__school').first()
+        if driver and driver.bus and driver.bus.school_id:
+            return driver.bus.school_id
+    except Exception:
+        pass
+
     return None
 
 

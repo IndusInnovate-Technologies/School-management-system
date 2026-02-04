@@ -28,8 +28,10 @@ router.register(r'financial-users', views.FinancialUserViewSet, basename='financ
 # router.register(r'calendar', views.CalendarViewSet, basename='calendar')
 # router.register(r'timetables', views.TimetableViewSet, basename='timetable')
 router.register(r'galleries', views.GalleryViewSet, basename='gallery')
+router.register(r'push-notification-logs', views.PushNotificationLogViewSet, basename='push_notification_log')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('send-push/', views.send_push_notification, name='send_push_notification'),
 ]
 

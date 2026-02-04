@@ -30,10 +30,11 @@ import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'Student_Communication.dart';
-
-
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'services/fcm_service.dart';
 
 // -------------------------------------------------------------------------
 // 1. UTILITY FUNCTIONS & DATA MODELS
@@ -100,7 +101,14 @@ class DashboardData {
 // 2. MAIN APP SETUP & CONSTANTS
 // -------------------------------------------------------------------------
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    debugPrint('Firebase init (optional): $e');
+  }
   runApp(const SchoolManagementSystemApp());
 }
 
@@ -167,12 +175,45 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _schoolId;
   String? _logoUrl;
   String? _studentId; // Added to store the current student ID
+  int _notificationUnreadCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadCachedSchoolDetails();
     _loadParentProfile(); // This will trigger _fetchAttendance after getting student ID
+    _initFcm();
+    _loadNotificationCount();
+  }
+
+  Future<void> _loadNotificationCount() async {
+    try {
+      final data = await api.ApiService.getMyPushNotifications();
+      if (mounted) setState(() => _notificationUnreadCount = data['unread_count'] as int? ?? 0);
+    } catch (_) {}
+  }
+
+  void _openNotificationsPanel() async {
+    await api.ApiService.markMyPushNotificationsRead();
+    if (mounted) setState(() => _notificationUnreadCount = 0);
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (ctx) => _NotificationsPanel(
+        onClose: () => Navigator.pop(ctx),
+      ),
+    );
+  }
+
+  Future<void> _initFcm() async {
+    try {
+      await FcmService.requestPermission();
+      FcmService.setupHandlers();
+      await FcmService.registerTokenIfNeeded();
+    } catch (e) {
+      debugPrint('FCM init: $e');
+    }
   }
 
   Future<void> _fetchAttendance({String? studentId}) async {
@@ -372,6 +413,35 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _fetchBusDetails({String? studentId}) async {
+    try {
+      final idToUse = studentId ?? _studentId;
+      final busDetails = await api.ApiService.fetchBusDetailsForDashboard(idToUse);
+      if (mounted) {
+        setState(() {
+          final currentAttendanceHistory = mockData.attendanceHistory;
+          mockData = DashboardData(
+            userName: mockData.userName,
+            totalHomework: mockData.totalHomework,
+            upcomingTests: mockData.upcomingTests,
+            totalResults: mockData.totalResults,
+            academicsScore: mockData.academicsScore,
+            extracurricularCount: mockData.extracurricularCount,
+            feesStatus: mockData.feesStatus,
+            busDetails: busDetails,
+            homework: mockData.homework,
+            tests: mockData.tests,
+            results: mockData.results,
+            recentEvents: mockData.recentEvents,
+          );
+          mockData.attendanceHistory = currentAttendanceHistory;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching bus details for dashboard: $e');
+    }
+  }
+
   Future<void> _loadParentProfile() async {
     try {
       final parentData = await api.ApiService.fetchParentProfile();
@@ -485,18 +555,20 @@ class _HomeScreenState extends State<HomeScreen> {
         debugPrint('Fetching specific data for student: $_studentId');
         await _fetchAttendance(studentId: _studentId);
         await _fetchExams(studentId: _studentId);
-        await _fetchHomework(studentId: _studentId); // Added
+        await _fetchHomework(studentId: _studentId);
+        await _fetchBusDetails(studentId: _studentId);
         await _fetchRecentEvents(studentId: _studentId);
         await _fetchActivities(studentId: _studentId);
         dataFetched = true;
       } else {
          debugPrint('No student ID found, attempting fetch without ID (Student user context)');
-         await _fetchAttendance(); 
+         await _fetchAttendance();
          await _fetchExams();
-         await _fetchHomework(); // Added
+         await _fetchHomework();
+         await _fetchBusDetails();
          await _fetchRecentEvents();
          await _fetchActivities();
-         dataFetched = true; 
+         dataFetched = true;
       }
     } catch (e) {
       debugPrint('Failed to load profile (Parent/Student): $e');
@@ -506,6 +578,7 @@ class _HomeScreenState extends State<HomeScreen> {
           debugPrint('Retrying fetch in catch block...');
           _fetchAttendance();
           _fetchExams();
+          _fetchBusDetails();
           _fetchRecentEvents();
           _fetchActivities();
       }
@@ -613,13 +686,15 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_studentId != null) {
           await _fetchAttendance(studentId: _studentId);
           await _fetchExams(studentId: _studentId);
-          await _fetchHomework(studentId: _studentId); // Added
+          await _fetchHomework(studentId: _studentId);
+          await _fetchBusDetails(studentId: _studentId);
           await _fetchRecentEvents(studentId: _studentId);
           await _fetchActivities(studentId: _studentId);
       } else {
           await _fetchAttendance();
           await _fetchExams();
-          await _fetchHomework(); // Added
+          await _fetchHomework();
+          await _fetchBusDetails();
           await _fetchRecentEvents();
           await _fetchActivities();
       }
@@ -683,12 +758,12 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       {
         'icon': Icons.directions_bus,
-        'number': (mockData.busDetails['busNumber'] as String?) ?? 'N/A',
+        'number': 'School Bus',
         'label': 'Bus Details',
         'color': const Color(0xFF17a2b8),
         'action': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const BusDetailsPage()),
+          MaterialPageRoute(builder: (context) => BusDetailsPage(studentId: _studentId)),
         ),
       },
       {
@@ -1857,31 +1932,13 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Avatar with Navigation
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const StudentProfilePage(),
-                      ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(30),
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
-                    ),
-                    child: const CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Color(0xFFE1BEE7),
-                      child: Text('👨‍👩‍👧', style: TextStyle(fontSize: 22)),
-                    ),
-                  ),
+              // Notification icon (last right before avatar)
+              IconButton(
+                onPressed: _openNotificationsPanel,
+                icon: Badge(
+                  isLabelVisible: _notificationUnreadCount > 0,
+                  label: Text('$_notificationUnreadCount'),
+                  child: const Icon(Icons.notifications_none, color: Colors.white, size: 26),
                 ),
               ),
               const SizedBox(width: 20),
@@ -2031,10 +2088,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 30),
 
-            // Bus Details Section
+            // Bus Details Section (fetched from API when student is added to a bus)
             _SectionCard(
               title: '🚌 Bus Details',
-              child: _BusDetailsCard(details: mockData.busDetails),
+              child: _BusDetailsCard(details: mockData.busDetails, studentId: _studentId),
             ),
             const SizedBox(height: 100), // Space for floating button
           ],
@@ -2057,6 +2114,119 @@ class _HomeScreenState extends State<HomeScreen> {
     // Open Student Communication screen
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const StudentCommunicationScreen())
+    );
+  }
+}
+
+// Notifications panel (push notifications from management)
+class _NotificationsPanel extends StatefulWidget {
+  final VoidCallback onClose;
+
+  const _NotificationsPanel({required this.onClose});
+
+  @override
+  State<_NotificationsPanel> createState() => _NotificationsPanelState();
+}
+
+class _NotificationsPanelState extends State<_NotificationsPanel> {
+  List<Map<String, dynamic>> _notifications = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final data = await api.ApiService.getMyPushNotifications();
+    if (mounted) {
+      setState(() {
+        _notifications = data['notifications'] as List<Map<String, dynamic>>;
+        _loading = false;
+      });
+    }
+  }
+
+  static String _formatTime(dynamic value) {
+    if (value == null) return '—';
+    if (value is String) {
+      try {
+        final d = DateTime.tryParse(value);
+        if (d != null) {
+          final now = DateTime.now();
+          final diff = now.difference(d);
+          if (diff.inDays > 0) return '${diff.inDays}d ago';
+          if (diff.inHours > 0) return '${diff.inHours}h ago';
+          if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+          return 'Just now';
+        }
+      } catch (_) {}
+    }
+    return '—';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const fixedHeight = 420.0;
+    final maxH = MediaQuery.of(context).size.height * 0.85;
+    final height = fixedHeight > maxH ? maxH : fixedHeight;
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: BoxConstraints(maxWidth: 400, maxHeight: height),
+          height: height,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: Colors.black26, blurRadius: 12, offset: const Offset(0, 4)),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Notifications', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    IconButton(onPressed: widget.onClose, icon: const Icon(Icons.close)),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: _loading
+                    ? const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+                    : _notifications.isEmpty
+                        ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No notifications yet')))
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            itemCount: _notifications.length,
+                            itemBuilder: (context, index) {
+                              final n = _notifications[index];
+                              final title = n['title'] as String? ?? '—';
+                              final body = n['body'] as String? ?? '';
+                              final createdAt = _formatTime(n['created_at']);
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: ListTile(
+                                  leading: const CircleAvatar(child: Icon(Icons.notifications, color: Colors.white), backgroundColor: Color(0xFF667eea)),
+                                  title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  subtitle: Text('${body.isNotEmpty ? body : ''}\n$createdAt', maxLines: 2, overflow: TextOverflow.ellipsis),
+                                ),
+                              );
+                            },
+                          ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -2254,8 +2424,9 @@ class _PerformanceStatItem extends StatelessWidget {
 
 class _BusDetailsCard extends StatelessWidget {
   final Map<String, dynamic> details;
+  final String? studentId;
 
-  const _BusDetailsCard({required this.details});
+  const _BusDetailsCard({required this.details, this.studentId});
 
   String _safeGet(String key, [String defaultValue = 'N/A']) {
     final value = details[key];
@@ -2271,16 +2442,16 @@ class _BusDetailsCard extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              fontWeight: FontWeight.w800, // Bolder
+              fontWeight: FontWeight.w800,
               color: Color(0xFF5A67C4),
-              fontSize: 18, // Increased size
+              fontSize: 18,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: const TextStyle(fontSize: 13, color: Colors.grey),
-          ), // Increased size
+          ),
         ],
       ),
     );
@@ -2288,6 +2459,28 @@ class _BusDetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (details.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.directions_bus, color: Colors.grey, size: 24),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'No bus assigned. Contact the school office to add transport.',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -3458,6 +3651,19 @@ class _WhatsAppChatDialogState extends State<_WhatsAppChatDialog>
   }
 
   void _openGroup(BuildContext context, Map<String, dynamic> group) {
+    // Reset unread count when opening group chat
+    final groupId = group['id']?.toString();
+    final groupName = group['name']?.toString() ?? groupId ?? '';
+    if (groupId != null && groupId.isNotEmpty) {
+      if ((group['unread'] ?? 0) > 0) {
+        api.ApiService.markGroupRead(groupId);
+      }
+      setState(() {
+        _unreadCounts[groupName] = 0;
+        final groupIndex = _groups.indexWhere((g) => g['id'] == groupId || g['name'] == groupName);
+        if (groupIndex != -1) _groups[groupIndex]['unread'] = 0;
+      });
+    }
     // Close the parent dialog, then open the group chat as a full-screen route
     Navigator.of(context).pop();
     Navigator.of(context).push(
@@ -3465,6 +3671,13 @@ class _WhatsAppChatDialogState extends State<_WhatsAppChatDialog>
         builder: (context) => _UnifiedChatScreen(
           contact: group,
           isGroup: true,
+          onUnreadCountUpdate: (name, count) {
+            setState(() {
+              _unreadCounts[name] = count;
+              final groupIndex = _groups.indexWhere((g) => g['name'] == name);
+              if (groupIndex != -1) _groups[groupIndex]['unread'] = count;
+            });
+          },
           onLastMessageUpdate: (name, lastMsg, timestamp, isSentByMe, isRead) {
             setState(() {
               final groupIndex = _groups.indexWhere((g) => g['name'] == name);
@@ -4264,11 +4477,31 @@ class _WhatsAppChatScreenState extends State<_WhatsAppChatScreen>
   }
 
   void _openGroup(BuildContext context, Map<String, dynamic> group) {
+    // Reset unread count when opening group chat
+    final groupId = group['id']?.toString();
+    final groupName = group['name']?.toString() ?? groupId ?? '';
+    if (groupId != null && groupId.isNotEmpty) {
+      if ((group['unread'] ?? 0) > 0) {
+        api.ApiService.markGroupRead(groupId);
+      }
+      setState(() {
+        _unreadCounts[groupName] = 0;
+        final groupIndex = _groups.indexWhere((g) => g['id'] == groupId || g['name'] == groupName);
+        if (groupIndex != -1) _groups[groupIndex]['unread'] = 0;
+      });
+    }
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => _UnifiedChatScreen(
           contact: group,
           isGroup: true,
+          onUnreadCountUpdate: (name, count) {
+            setState(() {
+              _unreadCounts[name] = count;
+              final groupIndex = _groups.indexWhere((g) => g['name'] == name);
+              if (groupIndex != -1) _groups[groupIndex]['unread'] = count;
+            });
+          },
           onLastMessageUpdate: (name, lastMsg, timestamp, isSentByMe, isRead) {
             setState(() {
               final groupIndex = _groups.indexWhere((g) => g['name'] == name);
@@ -4357,6 +4590,9 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
   final ScrollController _scrollController = ScrollController();
   List<Map<String, dynamic>> _messages = [];
   bool _isLoadingMessages = true;
+  Map<String, dynamic>? _editingMessage;
+  Map<String, dynamic>? _replyingTo;
+
 
   // State variable to track if text field is empty
   bool _isTextFieldEmpty = true;
@@ -4367,11 +4603,9 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
   String? _teacherUsername; // Display name (used for room ID)
   String? _studentEmail; // Student email/username for API calls and message saving
   String? _teacherEmail; // Teacher email/username for API calls and message saving
+  String? _currentUserId; // Current user ID for checking removal events
   final Set<String> _messageIds = {}; // Track message IDs to prevent duplicates
   
-  // Attachment support
-  List<File> _selectedFiles = [];
-  List<String> _selectedFileNames = [];
 
   // Parent and student info
   String? _parentEmail;
@@ -4396,9 +4630,20 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
     _isLoadingMessages = _messages.isEmpty;
     
     _messageController.addListener(_updateTextFieldState);
-    // Reset unread count when opening chat - defer to after build
+    // Mark as read on backend and reset unread count in parent when opening chat
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final contactName = widget.contact['name'] as String? ?? '';
+      if (widget.isGroup) {
+        final groupId = widget.contact['id']?.toString() ?? widget.contact['group_id']?.toString();
+        if (groupId != null && groupId.isNotEmpty) {
+          api.ApiService.markGroupRead(groupId);
+        }
+      } else {
+        final teacherId = widget.contact['user']?['user_id']?.toString() ?? widget.contact['user']?['id']?.toString();
+        if (teacherId != null && teacherId.isNotEmpty) {
+          api.ApiService.markConversationRead(teacherId);
+        }
+      }
       if (contactName.isNotEmpty && widget.onUnreadCountUpdate != null) {
         widget.onUnreadCountUpdate!(contactName, 0);
       }
@@ -4428,129 +4673,9 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
     });
   }
 
-  // Attachment methods
-  Future<void> _pickAttachment() async {
-    final ImagePicker picker = ImagePicker();
-    
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF667eea)),
-              title: const Text('Choose from Gallery'),
-              onTap: () async {
-                Navigator.pop(context);
-                final List<XFile> images = await picker.pickMultiImage();
-                if (images.isNotEmpty) {
-                  setState(() {
-                    for (var image in images) {
-                      _selectedFiles.add(File(image.path));
-                      _selectedFileNames.add(image.name);
-                    }
-                    _isTextFieldEmpty = false;
-                  });
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: Color(0xFF667eea)),
-              title: const Text('Take Photo'),
-              onTap: () async {
-                Navigator.pop(context);
-                _openCamera();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.description, color: Color(0xFF667eea)),
-              title: const Text('Choose Document'),
-              onTap: () async {
-                Navigator.pop(context);
-                FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true);
-                if (result != null) {
-                  setState(() {
-                    for (var file in result.files) {
-                      if (file.path != null) {
-                        _selectedFiles.add(File(file.path!));
-                        _selectedFileNames.add(file.name);
-                      }
-                    }
-                    _isTextFieldEmpty = false;
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _openCamera() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.camera);
-    if (image != null) {
-      if (!mounted) return;
-      
-      final bool? shouldSend = await showDialog<bool>(
-        context: context,
-        builder: (context) => Dialog.fullscreen(
-          child: Container(
-            color: Colors.black,
-            child: Stack(
-              children: [
-                Center(
-                  child: kIsWeb ? Image.network(image.path) : Image.file(File(image.path)),
-                ),
-                Positioned(
-                  top: 40,
-                  left: 20,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                    onPressed: () => Navigator.pop(context, false),
-                  ),
-                ),
-                Positioned(
-                  bottom: 30,
-                  right: 20,
-                  child: FloatingActionButton(
-                    backgroundColor: const Color(0xFF075E54),
-                    child: const Icon(Icons.send, color: Colors.white),
-                    onPressed: () => Navigator.pop(context, true),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      if (shouldSend == true) {
-        setState(() {
-          _selectedFiles.add(File(image.path));
-          _selectedFileNames.add(image.name);
-        });
-        _sendMessage();
-      }
-    }
-  }
-
-  void _removeAttachment(int index) {
-    setState(() {
-      _selectedFiles.removeAt(index);
-      _selectedFileNames.removeAt(index);
-      _updateTextFieldState();
-    });
-  }
 
   void _updateTextFieldState() {
-    final isEmpty = _messageController.text.isEmpty && _selectedFiles.isEmpty;
+    final isEmpty = _messageController.text.isEmpty && _editingMessage == null;
     if (_isTextFieldEmpty != isEmpty) {
       setState(() {
         _isTextFieldEmpty = isEmpty;
@@ -4560,7 +4685,7 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty && _selectedFiles.isEmpty) return;
+    if (text.isEmpty) return;
     
     if (_studentUsername == null || _studentUsername!.isEmpty) {
       debugPrint('Cannot send message: student name not initialized');
@@ -4576,52 +4701,57 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
       return;
     }
     
-    final List<File> filesToSend = List.from(_selectedFiles);
-    final List<String> fileNamesToSend = List.from(_selectedFileNames);
-    
     _messageController.clear();
     setState(() {
-      _selectedFiles.clear();
-      _selectedFileNames.clear();
       _isTextFieldEmpty = true;
     });
 
     String? groupId = widget.isGroup ? widget.contact['id']?.toString() : null;
 
-    if (text.isNotEmpty && filesToSend.isEmpty) {
-      await _sendSingleMessage(text: text, groupId: groupId);
-    } else if (filesToSend.isNotEmpty) {
-      for (int i = 0; i < filesToSend.length; i++) {
-        final file = filesToSend[i];
-        final fileName = fileNamesToSend[i];
-        final caption = (i == 0 && text.isNotEmpty) ? text : null;
-        await _sendSingleMessage(text: caption, file: file, fileName: fileName, groupId: groupId);
+    if (_editingMessage != null) {
+      final messageId = _editingMessage!['message_id']?.toString() ?? '';
+      if (messageId.isNotEmpty) {
+        final success = await api.ApiService.editMessage(messageId, text);
+        if (success) {
+          setState(() {
+            _editingMessage = null;
+          });
+        } else {
+          _showSnackBar('Failed to edit message');
+        }
       }
+      return;
+    }
+
+    // Send text-only message
+    if (text.isNotEmpty) {
+      await _sendSingleMessage(text: text, groupId: groupId);
     }
   }
 
-  Future<void> _sendSingleMessage({String? text, File? file, String? fileName, String? groupId}) async {
-    final messageText = text ?? (file != null ? '📎 $fileName' : '');
-    if (messageText.isEmpty && file == null) return;
+  Future<void> _sendSingleMessage({String? text, String? groupId}) async {
+    if (text == null || text.isEmpty) return;
 
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}_${messageText.hashCode}';
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}_${text.hashCode}';
     final tempTimestamp = DateTime.now().toUtc().toIso8601String();
     
+    final replyId = _replyingTo?['message_id']?.toString();
     setState(() {
       _messageIds.add(tempId);
       _messages.add(Map<String, dynamic>.from({
-        'text': messageText,
+        'text': text,
         'isTeacher': false,
         'time': intl.DateFormat('hh:mm a').format(DateTime.now()),
         'message_id': tempId,
         'timestamp': tempTimestamp,
-        'attachment': file?.path,
-        'attachment_name': fileName,
+        if (replyId != null) 'replied_to_id': replyId,
+        if (_replyingTo != null) 'replied_to_sender_name': _replyingTo!['sender_name'] ?? (_replyingTo!['isTeacher'] == true ? (widget.contact['name'] ?? 'Teacher') : 'You'),
+        if (_replyingTo != null) 'replied_to_text': _replyingTo!['text'] ?? 'Attachment',
       }));
       
       widget.onLastMessageUpdate?.call(
         widget.contact['name'] ?? 'Contact',
-        messageText,
+        text,
         tempTimestamp,
         true,
         false,
@@ -4630,50 +4760,43 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
     
     _scrollToBottom();
     
-    // Read file bytes for web platform
-    List<int>? fileBytes;
-    if (file != null && kIsWeb) {
-      try {
-        fileBytes = await file.readAsBytes();
-      } catch (e) {
-        debugPrint('Error reading file bytes: $e');
-      }
-    }
-
     try {
-      if (file != null || text != null) {
-        final recipientForApi = _teacherEmail ?? _teacherUsername ?? '';
-        final response = await api.ApiService.sendMessageWithAttachment(
-          recipient: widget.isGroup ? '' : (_teacherEmail ?? _teacherUsername ?? ''),
-          messageText: text,
-          filePath: kIsWeb ? null : file?.path,
-          fileBytes: fileBytes,
-          fileName: fileName,
-          messageType: file != null ? 
-            (file.path.toLowerCase().endsWith('.jpg') || 
-             file.path.toLowerCase().endsWith('.jpeg') || 
-             file.path.toLowerCase().endsWith('.png') ? 'image' : 'file') : 'text',
-          groupId: groupId,
-        );
-        
-        if (response != null && mounted) {
-          final realId = response['message_id'].toString();
-          setState(() {
-            final idx = _messages.indexWhere((m) => m['message_id'] == tempId);
-            if (idx != -1) {
-              _messages[idx]['message_id'] = realId;
-              _messages[idx]['attachment_url'] = response['attachment_url'];
-              _messages[idx]['attachment_name'] = response['attachment_name'] ?? fileName;
-              _messageIds.remove(tempId);
-              _messageIds.add(realId);
-            }
-          });
-        } else if (file != null) {
-           throw Exception("Failed to upload attachment");
-        } else {
-           // Fallback to WS if REST fails for text only (unlikely but safe)
-           _sendWsFallback(text!);
-        }
+      // For 1-to-1: pass teacher user_id so backend reliably finds recipient (fix: messages reaching receiver)
+      final teacherUserId = widget.isGroup ? null : (widget.contact['user']?['user_id']?.toString() ?? widget.contact['user']?['id']?.toString() ?? widget.contact['id']?.toString());
+      
+      final response = await api.ApiService.sendMessageWithAttachment(
+        recipient: widget.isGroup ? '' : (_teacherEmail ?? _teacherUsername ?? ''),
+        messageText: text,
+        filePath: null,
+        fileBytes: null,
+        fileName: null,
+        messageType: 'text',
+        groupId: groupId,
+        otherUserId: teacherUserId,
+        repliedTo: replyId,
+      );
+      
+      if (response != null && mounted) {
+        final realId = response['message_id'].toString();
+        setState(() {
+          final idx = _messages.indexWhere((m) => m['message_id'] == tempId);
+          if (idx != -1) {
+            _messages[idx] = Map<String, dynamic>.from(_messages[idx])..addAll({
+              'message_id': realId,
+              'message_type': response['message_type']?.toString() ?? 'text',
+              // Always preserve reply metadata - use API response if available, otherwise keep existing
+              'replied_to_id': response['replied_to_id']?.toString() ?? _messages[idx]['replied_to_id'],
+              'replied_to_sender_name': response['replied_to_sender_name']?.toString() ?? _messages[idx]['replied_to_sender_name'],
+              'replied_to_text': response['replied_to_text']?.toString() ?? _messages[idx]['replied_to_text'],
+            });
+            _messageIds.remove(tempId);
+            _messageIds.add(realId);
+            _replyingTo = null;
+          }
+        });
+      } else {
+         // Fallback to WS if REST fails for text only (unlikely but safe)
+         _sendWsFallback(text!);
       }
     } catch (error) {
       debugPrint('Error sending message: $error');
@@ -5022,6 +5145,9 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
           // Since parent and student are in same portal, try to use parent user as fallback
           // But first, try to extract student name from any available source
           final parentUser = parentData['user'] as Map<String, dynamic>?;
+          if (parentUser != null) {
+             _currentUserId = parentUser['user_id']?.toString() ?? parentUser['id']?.toString();
+          }
           final parentEmail = parentUser?['email']?.toString() ?? '';
           final parentFirstName = parentUser?['first_name']?.toString() ?? '';
           final parentLastName = parentUser?['last_name']?.toString() ?? '';
@@ -5279,6 +5405,57 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
     }
   }
 
+  String? _extractSenderName(Map<String, dynamic> decoded) {
+    // First try sender_name field
+    String? senderName = decoded['sender_name']?.toString();
+    if (senderName != null && senderName.isNotEmpty && senderName != 'Unknown') {
+      return senderName;
+    }
+    
+    // Try to get from sender object if it's a Map
+    if (decoded['sender'] is Map) {
+      final sender = decoded['sender'] as Map;
+      final firstName = sender['first_name']?.toString() ?? '';
+      final lastName = sender['last_name']?.toString() ?? '';
+      if (firstName.isNotEmpty || lastName.isNotEmpty) {
+        senderName = '${firstName} ${lastName}'.trim();
+        if (senderName.isNotEmpty) return senderName;
+      }
+      
+      final fullName = sender['full_name']?.toString();
+      if (fullName != null && fullName.isNotEmpty && fullName != 'null') {
+        return fullName;
+      }
+      
+      final username = sender['username']?.toString();
+      if (username != null && username.isNotEmpty) {
+        return username;
+      }
+    } else if (decoded['sender'] is String) {
+      final senderStr = decoded['sender'] as String;
+      if (senderStr.isNotEmpty && senderStr != 'Unknown') {
+        return senderStr;
+      }
+    }
+    
+    // If it's a group chat, try to find from existing messages
+    if (widget.isGroup && decoded['sender_id'] != null) {
+      final senderId = decoded['sender_id']?.toString() ?? '';
+      if (senderId.isNotEmpty) {
+        // Search through all messages to find sender name
+        for (final msg in _messages) {
+          final msgSenderId = msg['sender_id']?.toString() ?? '';
+          final msgSenderName = msg['sender_name']?.toString();
+          if (msgSenderId == senderId && msgSenderName != null && msgSenderName.isNotEmpty && msgSenderName != 'Unknown') {
+            return msgSenderName;
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+
   Future<void> _loadExistingMessages() async {
     if (_studentEmail == null || _teacherEmail == null) {
       debugPrint('Cannot load messages: missing email/username (student: $_studentEmail, teacher: $_teacherEmail)');
@@ -5311,12 +5488,15 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
             final senderLastName = sender?['last_name']?.toString() ?? '';
             final senderName = '$senderFirstName $senderLastName'.trim();
             
-            final isTeacher = senderUsername == _teacherUsername || 
-                             senderEmail == _teacherUsername ||
-                             senderName == _teacherUsername ||
-                             (widget.contact['user'] != null && 
-                              (widget.contact['user'] is Map && 
-                               (Map<String, dynamic>.from(widget.contact['user'] as Map))['username']?.toString() == senderUsername));
+            // Use ONLY teacher user id/username from contact to avoid student name matching (fix student-to-student display bug)
+            final contactUser = widget.contact['user'] is Map ? Map<String, dynamic>.from(widget.contact['user'] as Map) : null;
+            final teacherContactUsername = contactUser?['username']?.toString() ?? '';
+            final teacherContactEmail = contactUser?['email']?.toString() ?? '';
+            final teacherContactId = contactUser?['user_id']?.toString() ?? contactUser?['id']?.toString();
+            final isTeacher = (teacherContactId != null && (sender?['user_id']?.toString() == teacherContactId || sender?['id']?.toString() == teacherContactId)) ||
+                             senderUsername == teacherContactUsername ||
+                             senderEmail == teacherContactEmail ||
+                             (teacherContactUsername.isNotEmpty && senderUsername == teacherContactUsername);
             
             final messageText = msg['message_text']?.toString() ?? 
                                msg['message']?.toString() ?? 
@@ -5325,6 +5505,21 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
             final messageId = msg['message_id']?.toString() ?? 
                              msg['id']?.toString() ?? 
                              DateTime.now().toUtc().millisecondsSinceEpoch.toString();
+            final senderId = sender?['user_id']?.toString() ?? sender?['id']?.toString();
+            // Extract sender name with better fallback logic
+            String? displaySenderName = msg['sender_name']?.toString();
+            if (displaySenderName == null || displaySenderName.isEmpty || displaySenderName == 'Unknown') {
+              displaySenderName = senderName;
+              // If still empty, try full_name from sender object
+              if ((displaySenderName == null || displaySenderName.isEmpty) && sender != null) {
+                final fullName = sender['full_name']?.toString();
+                if (fullName != null && fullName.isNotEmpty && fullName != 'null') {
+                  displaySenderName = fullName;
+                } else {
+                  displaySenderName = sender['username']?.toString();
+                }
+              }
+            }
             
             return Map<String, dynamic>.from({
               'text': messageText,
@@ -5334,6 +5529,14 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
               'is_read': msg['is_read'] ?? false,
               'timestamp': msg['created_at']?.toString() ?? DateTime.now().toUtc().toIso8601String(),
               'attachment_url': msg['attachment_url'],
+              'attachment_name': msg['attachment_name'],
+              'sender_name': displaySenderName,
+              'sender_id': senderId,
+              'is_edited': msg['is_edited'] == true,
+              'replied_to_id': msg['replied_to_id']?.toString() ?? msg['replied_to']?.toString(),
+              'replied_to_sender_name': msg['replied_to_sender_name']?.toString(),
+              'replied_to_text': msg['replied_to_text']?.toString(),
+              'message_type': msg['message_type']?.toString() ?? 'text',
             });
           }).toList().reversed.toList();
           
@@ -5341,17 +5544,67 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
           // 1. Identify existing IDs
           final existingIds = _messages.map((m) => m['message_id']?.toString()).toSet();
           
-          // 2. Identify text of outgoing messages in history
-          final historySentTexts = history.where((h) => !(h['isTeacher'] as bool)).map((h) => h['text'] as String).toSet();
+          // 2. Match temp messages with history messages more precisely
+          // For each temp message, try to find a matching message in history by text, timestamp, and reply metadata
+          final tempMessages = _messages.where((m) => m['message_id']?.toString().startsWith('temp_') == true).toList();
+          for (final tempMsg in tempMessages) {
+            final tempText = tempMsg['text']?.toString() ?? '';
+            final tempReplyId = tempMsg['replied_to_id']?.toString();
+            final tempTimestamp = tempMsg['timestamp']?.toString() ?? '';
+            
+            // Find matching message in history (same text, same reply context, and recent timestamp)
+            final matchingHistory = history.firstWhere(
+              (h) {
+                if (h['isTeacher'] == true) return false; // Only match sent messages
+                if (h['text']?.toString() != tempText) return false;
+                final hReplyId = h['replied_to_id']?.toString();
+                if (tempReplyId != null && hReplyId != tempReplyId) return false;
+                // Check if timestamps are close (within 30 seconds)
+                try {
+                  final tempTime = DateTime.tryParse(tempTimestamp);
+                  final hTime = DateTime.tryParse(h['timestamp']?.toString() ?? '');
+                  if (tempTime != null && hTime != null) {
+                    final diff = tempTime.difference(hTime).abs().inSeconds;
+                    if (diff > 30) return false;
+                  }
+                } catch (e) {}
+                return true;
+              },
+              orElse: () => <String, dynamic>{},
+            );
+            
+            // If found, remove temp message (the real one from history will be added)
+            if (matchingHistory.isNotEmpty) {
+              final tempId = tempMsg['message_id']?.toString();
+              _messages.removeWhere((m) => m['message_id']?.toString() == tempId);
+              if (tempId != null) _messageIds.remove(tempId);
+            }
+          }
           
-          // 3. Remove temp messages matched in history
-          _messages.removeWhere((m) => m['message_id']?.toString().startsWith('temp_') == true && historySentTexts.contains(m['text']));
-          
-          // 4. Add only new messages from history
+          // 3. Add only new messages from history (update existing ones with reply metadata if missing)
           for (final msg in history) {
-            if (!existingIds.contains(msg['message_id']?.toString())) {
-               _messages.add(msg);
-               existingIds.add(msg['message_id']?.toString());
+            final msgId = msg['message_id']?.toString();
+            if (msgId == null) continue;
+            
+            if (existingIds.contains(msgId)) {
+              // Update existing message with reply metadata if it's missing
+              final existingIdx = _messages.indexWhere((m) => m['message_id']?.toString() == msgId);
+              if (existingIdx != -1) {
+                // Preserve reply metadata from API if it exists
+                if (msg['replied_to_id'] != null && _messages[existingIdx]['replied_to_id'] == null) {
+                  _messages[existingIdx]['replied_to_id'] = msg['replied_to_id']?.toString();
+                }
+                if (msg['replied_to_sender_name'] != null && _messages[existingIdx]['replied_to_sender_name'] == null) {
+                  _messages[existingIdx]['replied_to_sender_name'] = msg['replied_to_sender_name']?.toString();
+                }
+                if (msg['replied_to_text'] != null && _messages[existingIdx]['replied_to_text'] == null) {
+                  _messages[existingIdx]['replied_to_text'] = msg['replied_to_text']?.toString();
+                }
+              }
+            } else {
+              // Add new message
+              _messages.add(msg);
+              existingIds.add(msgId);
             }
           }
           
@@ -5390,12 +5643,15 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
             final senderLastName = sender?['last_name']?.toString() ?? '';
             final senderName = '$senderFirstName $senderLastName'.trim();
             
-            final isTeacher = senderUsername == _teacherUsername || 
-                             senderEmail == _teacherUsername ||
-                             senderName == _teacherUsername ||
-                             (widget.contact['user'] != null && 
-                              (widget.contact['user'] is Map && 
-                               (Map<String, dynamic>.from(widget.contact['user'] as Map))['username']?.toString() == senderUsername));
+            // Use ONLY teacher user id/username from contact (same as main history)
+            final contactUser = widget.contact['user'] is Map ? Map<String, dynamic>.from(widget.contact['user'] as Map) : null;
+            final teacherContactUsername = contactUser?['username']?.toString() ?? '';
+            final teacherContactEmail = contactUser?['email']?.toString() ?? '';
+            final teacherContactId = contactUser?['user_id']?.toString() ?? contactUser?['id']?.toString();
+            final senderIdVal = sender?['user_id']?.toString() ?? sender?['id']?.toString();
+            final isTeacher = (teacherContactId != null && senderIdVal == teacherContactId) ||
+                             senderUsername == teacherContactUsername ||
+                             senderEmail == teacherContactEmail;
             
             final messageId = msg['message_id']?.toString() ?? 
                              msg['id']?.toString() ?? 
@@ -5403,12 +5659,21 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
             
             _messageIds.add(messageId);
             
+            final sn = senderName.isNotEmpty ? senderName : sender?['username']?.toString();
             return Map<String, dynamic>.from({
               'text': msg['message']?.toString() ?? msg['subject']?.toString() ?? '',
               'isTeacher': isTeacher,
               'time': _formatMessageTime(msg['created_at']?.toString()),
               'message_id': messageId,
               'timestamp': msg['created_at']?.toString() ?? DateTime.now().toUtc().toIso8601String(),
+              'attachment_url': msg['attachment_url'],
+              'attachment_name': msg['attachment_name'],
+              'sender_name': sn,
+              'sender_id': sender?['user_id']?.toString() ?? sender?['id']?.toString(),
+              'is_edited': msg['is_edited'] == true,
+              'replied_to_id': msg['replied_to_id']?.toString(),
+              'replied_to_sender_name': msg['replied_to_sender_name']?.toString(),
+              'replied_to_text': msg['replied_to_text']?.toString(),
             });
           }).toList();
         });
@@ -5492,47 +5757,38 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
             // Check if this message is between the current student and the teacher
             // More lenient matching to catch all variations
             
-            // Check if sender is teacher (multiple ways to match)
+            // Check if sender is teacher: use ONLY teacher user_id, username, email (never name containment to avoid student name matching)
+            final teacherUserId = teacherUser?['user_id']?.toString() ?? teacherUser?['id']?.toString();
             final isFromCurrentTeacher = (
+              senderId == teacherUserId ||
               senderUsername == teacherUsername ||
               senderUsername == teacherEmail ||
               sender == teacherUsername ||
-              sender == teacherEmail ||
-              sender == teacherName ||
-              normalizedSender == normalizedTeacherName ||
-              sender == _teacherUsername ||
-              senderId == teacherUser?['user_id']?.toString() ||
-              (teacherName.isNotEmpty && sender.toLowerCase().contains(teacherName.toLowerCase())) ||
-              (teacherName.isNotEmpty && normalizedSender.contains(normalizedTeacherName))
+              sender == teacherEmail
             );
             
             // Check if recipient is teacher
             final isToCurrentTeacher = (
+              recipientId == teacherUserId ||
               recipient == teacherUsername ||
               recipient == teacherEmail ||
-              recipient == teacherName ||
-              normalizedRecipient == normalizedTeacherName ||
-              recipient == _teacherUsername ||
-              recipientId == teacherUser?['user_id']?.toString() ||
-              (teacherName.isNotEmpty && recipient.toLowerCase().contains(teacherName.toLowerCase()))
+              recipient == teacherName
             );
             
-            // Check if sender is student (multiple ways to match)
+            // Check if sender is student: use ONLY student identifiers (user_id, username, email)
             final isFromCurrentStudent = (
               senderUsername == _studentEmail ||
               senderUsername == _studentUsername ||
               sender == _studentEmail ||
               sender == _studentUsername ||
-              normalizedSender == normalizedStudentName ||
-              (normalizedStudentName.isNotEmpty && normalizedSender.contains(normalizedStudentName))
+              normalizedSender == normalizedStudentName
             );
             
-            // Check if recipient is student (multiple ways to match)
+            // Check if recipient is student
             final isToCurrentStudent = (
               recipient == _studentEmail ||
               recipient == _studentUsername ||
-              normalizedRecipient == normalizedStudentName ||
-              (normalizedStudentName.isNotEmpty && normalizedRecipient.contains(normalizedStudentName))
+              normalizedRecipient == normalizedStudentName
             );
             
             // Message is for this conversation if:
@@ -5639,6 +5895,12 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
                     'message_id': messageId,
                     'timestamp': timestamp,
                     'attachment_url': decoded['attachment_url'],
+                    'attachment_name': decoded['attachment_name'],
+                    'sender_name': decoded['sender']?.toString(),
+                    'sender_id': decoded['sender_id']?.toString(),
+                    'replied_to_id': decoded['replied_to_id']?.toString(),
+                    'replied_to_sender_name': decoded['replied_to_sender_name']?.toString(),
+                    'replied_to_text': decoded['replied_to_text']?.toString(),
                   });
                   _messageIds.add(messageId);
                 });
@@ -5647,9 +5909,118 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
               }
             }
             
-            // Check if message with this ID already exists
-            final alreadyExists = _messages.any((msg) => msg['message_id'] == messageId);
-            if (!alreadyExists) {
+            // When we receive our own message back (e.g. after send), update our temp message with real ID and reply metadata so sender sees reply block
+            if (!isTeacher && messageId.isNotEmpty) {
+              final existingIndex = _messages.lastIndexWhere((msg) {
+                if (msg['isTeacher'] != false) return false;
+                if (msg['message_id']?.toString().startsWith('temp_') != true) return false;
+                if (msg['text'] != messageText) return false;
+                try {
+                  final msgTimestamp = msg['timestamp']?.toString() ?? '';
+                  if (msgTimestamp.isNotEmpty) {
+                    final msgTime = DateTime.tryParse(msgTimestamp);
+                    if (msgTime != null) {
+                      final newTime = DateTime.tryParse(timestamp);
+                      if (newTime != null && DateTime.now().difference(newTime).abs().inSeconds < 10) return true;
+                    }
+                  }
+                } catch (e) {}
+                return true;
+              });
+              if (existingIndex != -1) {
+                setState(() {
+                  final oldTempId = _messages[existingIndex]['message_id']?.toString();
+                  final oldReplyId = _messages[existingIndex]['replied_to_id'];
+                  final oldReplySenderName = _messages[existingIndex]['replied_to_sender_name'];
+                  final oldReplyText = _messages[existingIndex]['replied_to_text'];
+                  _messages[existingIndex] = Map<String, dynamic>.from({
+                    'text': messageText,
+                    'isTeacher': isTeacher,
+                    'time': _formatMessageTime(timestamp),
+                    'isSent': true,
+                    'message_id': messageId,
+                    'timestamp': timestamp,
+                    'is_read': false,
+                    'attachment_url': decoded['attachment_url'],
+                    'attachment_name': decoded['attachment_name'],
+                    'sender_name': decoded['sender']?.toString(),
+                    'sender_id': decoded['sender_id']?.toString(),
+                    // Always preserve reply metadata - use decoded if available, otherwise keep existing
+                    'replied_to_id': decoded['replied_to_id']?.toString() ?? oldReplyId,
+                    'replied_to_sender_name': decoded['replied_to_sender_name']?.toString() ?? oldReplySenderName,
+                    'replied_to_text': decoded['replied_to_text']?.toString() ?? oldReplyText,
+                  });
+                  if (oldTempId != null) _messageIds.remove(oldTempId);
+                  _messageIds.add(messageId);
+                });
+                debugPrint('Updated own temp message with real ID and reply metadata: $messageId');
+                return;
+              }
+            }
+            
+            // For sent messages, check if there's a temp message that should be updated
+            if (!isTeacher && messageId.isNotEmpty) {
+              // Check if we already have this message (by ID or by matching temp message)
+              final existingById = _messages.indexWhere((msg) => msg['message_id']?.toString() == messageId);
+              if (existingById != -1) {
+                debugPrint('Message already exists with ID: $messageId, skipping duplicate');
+                return;
+              }
+              
+              // Check for matching temp message (same text, same sender, recent timestamp)
+              final tempMatchIndex = _messages.indexWhere((msg) {
+                if (msg['isTeacher'] != false) return false;
+                final msgId = msg['message_id']?.toString();
+                if (msgId == null || !msgId.startsWith('temp_')) return false;
+                if (msg['text'] != messageText) return false;
+                try {
+                  final msgTimestamp = msg['timestamp']?.toString() ?? '';
+                  if (msgTimestamp.isNotEmpty) {
+                    final msgTime = DateTime.tryParse(msgTimestamp);
+                    if (msgTime != null) {
+                      final newTime = DateTime.tryParse(timestamp);
+                      if (newTime != null) {
+                        final diff = msgTime.difference(newTime).abs().inSeconds;
+                        if (diff <= 30) return true; // Within 30 seconds
+                      }
+                    }
+                  }
+                } catch (e) {}
+                return false;
+              });
+              
+              if (tempMatchIndex != -1) {
+                // Update the temp message with real ID
+                setState(() {
+                  final oldTempId = _messages[tempMatchIndex]['message_id']?.toString();
+                  _messages[tempMatchIndex] = Map<String, dynamic>.from({
+                    'text': messageText,
+                    'isTeacher': isTeacher,
+                    'time': _formatMessageTime(timestamp),
+                    'isSent': true,
+                    'message_id': messageId,
+                    'timestamp': timestamp,
+                    'is_read': false,
+                    'attachment_url': decoded['attachment_url'],
+                    'attachment_name': decoded['attachment_name'],
+                    'sender_name': decoded['sender']?.toString(),
+                    'sender_id': decoded['sender_id']?.toString(),
+                    'replied_to_id': decoded['replied_to_id']?.toString() ?? _messages[tempMatchIndex]['replied_to_id'],
+                    'replied_to_sender_name': decoded['replied_to_sender_name']?.toString() ?? _messages[tempMatchIndex]['replied_to_sender_name'],
+                    'replied_to_text': decoded['replied_to_text']?.toString() ?? _messages[tempMatchIndex]['replied_to_text'],
+                    'message_type': decoded['message_type']?.toString() ?? 'text',
+                  });
+                  if (oldTempId != null) _messageIds.remove(oldTempId);
+                  _messageIds.add(messageId);
+                });
+                debugPrint('Updated temp message with real ID from WebSocket: $messageId');
+                return;
+              }
+            }
+            
+            // Check if message with this ID already exists (prevent duplicates)
+            final alreadyExists = _messageIds.contains(messageId) || _messages.any((msg) => msg['message_id']?.toString() == messageId);
+            if (!alreadyExists && messageId.isNotEmpty) {
               setState(() {
                 _messageIds.add(messageId.isNotEmpty ? messageId : DateTime.now().millisecondsSinceEpoch.toString());
                 _messages.add(Map<String, dynamic>.from({
@@ -5659,7 +6030,14 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
                   'isSent': !isTeacher, // Received messages from teacher are not sent by student
                   'message_id': messageId.isNotEmpty ? messageId : DateTime.now().millisecondsSinceEpoch.toString(),
                   'timestamp': timestamp,
+                  'is_read': false, // Single tick until recipient reads (double tick)
                   'attachment_url': decoded['attachment_url'],
+                  'attachment_name': decoded['attachment_name'],
+                  'sender_name': _extractSenderName(decoded),
+                  'sender_id': decoded['sender_id']?.toString(),
+                  'replied_to_id': decoded['replied_to_id']?.toString(),
+                  'replied_to_sender_name': decoded['replied_to_sender_name']?.toString(),
+                  'replied_to_text': decoded['replied_to_text']?.toString(),
                 }));
               });
               _scrollToBottom();
@@ -5679,9 +6057,155 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
             } else {
               debugPrint('Duplicate message ignored (ID: $messageId, text: $messageText)');
             }
-            if (messageType == 'group_removal') {
+          } else if (messageType == 'message_edited') {
+            final messageId = decoded['message_id']?.toString() ?? '';
+            final newText = decoded['message']?.toString() ?? '';
+            
+            if (messageId.isNotEmpty) {
+              setState(() {
+                final index = _messages.indexWhere((m) => m['message_id'] == messageId);
+                if (index != -1) {
+                  final oldMsg = _messages[index];
+                  _messages[index] = Map<String, dynamic>.from(oldMsg)..addAll({
+                    'text': newText,
+                    'is_edited': true,
+                  });
+                }
+              });
+            }
+          } else if (messageType == 'message_deleted') {
+            final messageId = decoded['message_id']?.toString() ?? '';
+            if (messageId.isNotEmpty) {
+              setState(() {
+                final index = _messages.indexWhere((m) => m['message_id'] == messageId);
+                if (index != -1) {
+                  final oldMsg = _messages[index];
+                  _messages[index] = Map<String, dynamic>.from(oldMsg)..addAll({
+                    'text': "This message was deleted",
+                    'attachment_url': null,
+                    'attachment_name': null,
+                    'is_deleted': true,
+                  });
+                }
+              });
+            }
+          } else if (messageType == 'chat.messages_read') {
+            // WhatsApp-like double tick: other party read my messages
+            final readByUserId = decoded['read_by_user_id']?.toString() ?? '';
+            final eventGroupId = decoded['group_id']?.toString() ?? '';
+            final bool forThisChat = widget.isGroup
+                ? (eventGroupId == (widget.contact['id']?.toString() ?? widget.contact['group_id']?.toString()))
+                : (readByUserId == (widget.contact['user']?['user_id']?.toString() ?? widget.contact['user']?['id']?.toString()));
+            if (forThisChat && mounted) {
+              setState(() {
+                for (int i = 0; i < _messages.length; i++) {
+                  final m = _messages[i];
+                  if (m['isTeacher'] != true) {
+                    _messages[i] = Map<String, dynamic>.from(m)..['is_read'] = true;
+                  }
+                }
+              });
+              widget.onLastMessageUpdate?.call(
+                widget.contact['name']?.toString() ?? '',
+                _messages.isNotEmpty ? (_messages.last['text']?.toString() ?? '') : '',
+                _messages.isNotEmpty ? (_messages.last['timestamp']?.toString() ?? '') : '',
+                true,
+                true,
+              );
+            }
+            } else if (messageType == 'chat.group_updated') {
+              // Participants see updated group name / new members (like WhatsApp)
+              final eventGroupId = decoded['group_id']?.toString() ?? '';
+              if (widget.isGroup && eventGroupId == (widget.contact['id']?.toString() ?? widget.contact['group_id']?.toString()) && mounted) {
+                final updatedType = decoded['updated_type']?.toString() ?? '';
+                final newName = decoded['group_name']?.toString();
+                if (newName != null && newName.isNotEmpty && widget.contact is Map) {
+                  setState(() {
+                    widget.contact['name'] = newName;
+                  });
+                }
+                if (updatedType == 'name') {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Group name updated')),
+                  );
+                } else if (updatedType == 'members_added' || updatedType == 'members_removed') {
+                  // System messages are created by backend, reload messages to show them
+                  // Trigger a reload by fetching latest messages
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
+                    try {
+                      final messages = await api.ApiService.fetchChatMessages(
+                        widget.isGroup ? '' : _studentEmail ?? '', 
+                        widget.isGroup ? '' : _teacherEmail ?? '',
+                        otherUserId: widget.isGroup ? null : (widget.contact['id']?.toString() ?? widget.contact['user_id']?.toString()),
+                        groupId: widget.isGroup ? widget.contact['id']?.toString() : null,
+                      );
+                      if (mounted) {
+                        setState(() {
+                          final List<Map<String, dynamic>> history = messages.map((msg) {
+                            final sender = msg['sender'] is Map ? Map<String, dynamic>.from(msg['sender'] as Map) : null;
+                            final senderUsername = sender?['username']?.toString() ?? '';
+                            final senderEmail = sender?['email']?.toString() ?? '';
+                            final senderFirstName = sender?['first_name']?.toString() ?? '';
+                            final senderLastName = sender?['last_name']?.toString() ?? '';
+                            final senderName = '$senderFirstName $senderLastName'.trim();
+                            final contactUser = widget.contact['user'] is Map ? Map<String, dynamic>.from(widget.contact['user'] as Map) : null;
+                            final teacherContactUsername = contactUser?['username']?.toString() ?? '';
+                            final teacherContactEmail = contactUser?['email']?.toString() ?? '';
+                            final teacherContactId = contactUser?['user_id']?.toString() ?? contactUser?['id']?.toString();
+                            final isTeacher = (teacherContactId != null && (sender?['user_id']?.toString() == teacherContactId || sender?['id']?.toString() == teacherContactId)) ||
+                                             senderUsername == teacherContactUsername ||
+                                             senderEmail == teacherContactEmail ||
+                                             (teacherContactUsername.isNotEmpty && senderUsername == teacherContactUsername);
+                            final messageText = msg['message_text']?.toString() ?? 
+                                               msg['message']?.toString() ?? 
+                                               msg['subject']?.toString() ?? '';
+                            final messageType = msg['message_type']?.toString() ?? 'text';
+                            final messageId = msg['message_id']?.toString() ?? 
+                                             msg['id']?.toString() ?? 
+                                             DateTime.now().toUtc().millisecondsSinceEpoch.toString();
+                            final senderId = sender?['user_id']?.toString() ?? sender?['id']?.toString();
+                            final displaySenderName = msg['sender_name']?.toString() ?? senderName;
+                            return Map<String, dynamic>.from({
+                              'text': messageText,
+                              'isTeacher': isTeacher,
+                              'time': _formatMessageTime(msg['created_at']?.toString()),
+                              'message_id': messageId,
+                              'is_read': msg['is_read'] ?? false,
+                              'timestamp': msg['created_at']?.toString() ?? DateTime.now().toUtc().toIso8601String(),
+                              'attachment_url': msg['attachment_url'],
+                              'attachment_name': msg['attachment_name'],
+                              'sender_name': displaySenderName,
+                              'sender_id': senderId,
+                              'is_edited': msg['is_edited'] == true,
+                              'replied_to_id': msg['replied_to_id']?.toString() ?? msg['replied_to']?.toString(),
+                              'replied_to_sender_name': msg['replied_to_sender_name']?.toString(),
+                              'replied_to_text': msg['replied_to_text']?.toString(),
+                              'message_type': messageType,
+                            });
+                          }).toList().reversed.toList();
+                          _messages = history;
+                          _messageIds.clear();
+                          _messageIds.addAll(_messages.map((m) => m['message_id'].toString()));
+                        });
+                      }
+                    } catch (e) {
+                      debugPrint('Error reloading messages after member change: $e');
+                    }
+                  });
+                }
+              }
+            } else if (messageType == 'group_removal') {
               final rid = decoded['group_id']?.toString();
+              // Check if event is for this group AND for this user
+              final removedUserId = decoded['user_id']?.toString() ?? decoded['member_id']?.toString();
+              
               if (rid == (widget.contact['id']?.toString() ?? widget.contact['group_id']?.toString())) {
+                // If user_id is present, make sure it matches current user
+                if (removedUserId != null && _currentUserId != null && removedUserId != _currentUserId) {
+                   debugPrint('Ignored group_removal for another user: $removedUserId (me: $_currentUserId)');
+                   return;
+                }
+                
                 if (mounted) {
                   setState(() {
                     _isRemovedFromGroup = true;
@@ -5693,7 +6217,7 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
             }
             debugPrint('Chat error: ${decoded['message']}');
           }
-        } catch (error) {
+        catch (error) {
           debugPrint('Realtime chat parse error: $error');
         }
       });
@@ -5762,10 +6286,14 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
                   builder: (context) => GroupInfoDialog(
                     groupId: widget.contact['id']?.toString() ?? '',
                     groupName: widget.contact['name'] ?? 'Group Info',
+                    currentUserId: _currentUserId ?? '',
                     onNameUpdated: (newName) {
-                      // Logic to update name in parent if needed
+                      setState(() {
+                        if (widget.isGroup && widget.contact is Map) {
+                          widget.contact['name'] = newName;
+                        }
+                      });
                     },
-                    isReadOnly: true,
                   ),
                 );
               },
@@ -5865,64 +6393,58 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
                   ),
                 )
               : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_selectedFileNames.isNotEmpty)
-                  Container(
-                    height: 50,
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _selectedFileNames.length,
-                      itemBuilder: (context, index) {
-                        final name = _selectedFileNames[index];
-                        final isImage = name.toLowerCase().endsWith('.jpg') || 
-                                        name.toLowerCase().endsWith('.jpeg') || 
-                                        name.toLowerCase().endsWith('.png');
-                        return Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(isImage ? Icons.image : Icons.attach_file, 
-                                   size: 16, color: const Color(0xFF667eea)),
-                              const SizedBox(width: 4),
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 120),
-                                child: Text(
-                                  name,
-                                  style: const TextStyle(fontSize: 12),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                   if (_replyingTo != null) _buildReplyPreview(),
+                   if (_editingMessage != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.edit, size: 16, color: Color(0xFF667eea)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Editing Message',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF667eea),
+                                  ),
+                                ),
+                                Text(
+                                  _editingMessage!['text'] ?? '',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[700],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                              GestureDetector(
-                                onTap: () => _removeAttachment(index),
-                                child: const Icon(Icons.close, size: 16, color: Colors.grey),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        );
-                      },
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 20, color: Colors.grey),
+                            onPressed: () {
+                              setState(() {
+                                _editingMessage = null;
+                                _messageController.clear();
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                 Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.attach_file, color: Colors.grey),
-                      onPressed: _pickAttachment,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.camera_alt, color: Colors.grey),
-                      onPressed: _openCamera,
-                      tooltip: 'Camera',
-                    ),
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
@@ -5932,7 +6454,7 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
                         child: TextField(
                           controller: _messageController,
                           decoration: InputDecoration(
-                            hintText: _selectedFileNames.isNotEmpty ? 'Add a caption...' : 'Type a message...',
+                            hintText: 'Type a message...',
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                             hintStyle: TextStyle(color: Colors.grey[500]),
@@ -5996,6 +6518,49 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
   }
 
 
+  void _showImagePreview(String? urlStr, String? name) {
+    if (urlStr == null || urlStr.isEmpty) return;
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: urlStr.startsWith('http')
+                  ? Image.network(
+                      urlStr,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 80, color: Colors.white),
+                      loadingBuilder: (_, child, progress) =>
+                          progress == null ? child : const Center(child: CircularProgressIndicator(color: Colors.white)),
+                    )
+                  : Image.file(File(urlStr), fit: BoxFit.contain),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              icon: const Icon(Icons.download, color: Colors.white),
+              label: const Text('Download', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              style: TextButton.styleFrom(backgroundColor: const Color(0xFF667eea)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _downloadAttachment(urlStr, name);
+              },
+            ),
+            TextButton(
+              child: const Text('Close', style: TextStyle(color: Colors.white70)),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _downloadAttachment(String? urlStr, String? name) async {
     if (urlStr == null || urlStr.isEmpty) return;
     
@@ -6029,9 +6594,9 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
            await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
          }
       } else {
-        if (['.jpg', '.jpeg', '.png'].any((ext) => url.toLowerCase().endsWith(ext))) {
+        if (['.jpg', '.jpeg', '.png', '.webp', '.gif'].any((ext) => url.toLowerCase().endsWith(ext))) {
            var response = await Dio().get(url, options: Options(responseType: ResponseType.bytes));
-           final result = await ImageGallerySaver.saveImage(
+           final result = await ImageGallerySaverPlus.saveImage(
              Uint8List.fromList(response.data),
              quality: 100, 
              name: fileName
@@ -6040,9 +6605,9 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image saved to Gallery')));
            }
         } else {
-           if (await canLaunchUrl(Uri.parse(url))) {
+           try {
              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-           }
+           } catch (_) {}
         }
       }
     } catch (e) {
@@ -6055,13 +6620,60 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
     }
   }
 
+  Color _getSenderColor(String? senderId) {
+    const colors = [
+      Color(0xFFE53935), Color(0xFFD81B60), Color(0xFF8E24AA), Color(0xFF5E35B1),
+      Color(0xFF3949AB), Color(0xFF1E88E5), Color(0xFF039BE5), Color(0xFF00ACC1),
+      Color(0xFF00897B), Color(0xFF43A047), Color(0xFF7CB342), Color(0xFFC0CA33),
+      Color(0xFFFDD835), Color(0xFFFFB300), Color(0xFFFB8C00), Color(0xFFF4511E),
+    ];
+    final id = senderId ?? '';
+    return colors[id.hashCode.abs() % colors.length];
+  }
+
+  String _getInitialsFromName(String name) {
+    if (name.isEmpty || name == 'Unknown') return '?';
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return '?';
+    String initials = parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '?';
+    if (parts.length > 1 && parts.last.isNotEmpty) {
+      initials += parts.last[0].toUpperCase();
+    }
+    return initials;
+  }
+
   Widget _buildMessage(Map<String, dynamic> message) {
     final String text = message['text'] ?? '';
     final bool isTeacher = message['isTeacher'] ?? false;
     final String time = message['time'] ?? '';
     final bool isRead = message['is_read'] == true;
-    final String? attachmentUrl = message['attachment_url'] ?? message['attachment'];
-    final String? attachmentName = message['attachment_name'];
+    final bool isDeleted = message['is_deleted'] == true;
+    final bool isEdited = message['is_edited'] == true;
+    final String? attachmentUrl = message['is_deleted'] == true ? null : (message['attachment_url'] ?? message['attachment']);
+    final String? attachmentName = message['is_deleted'] == true ? null : message['attachment_name'];
+    final String? senderName = message['sender_name']?.toString();
+    final String? senderId = message['sender_id']?.toString();
+    final String? messageType = message['message_type']?.toString() ?? 'text';
+    final bool isSystem = messageType == 'system';
+    
+    // System messages: centered, gray, italic (like WhatsApp)
+    if (isSystem) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Center(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+    final Color senderColor = _getSenderColor(senderId ?? senderName);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -6069,15 +6681,17 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
         mainAxisAlignment: isTeacher ? MainAxisAlignment.start : MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Profile picture for received messages (left side)
+          // Left avatar: every received message (teacher/contact) - bubble with initials like teacher UI
           if (isTeacher) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.grey[300],
+              backgroundColor: widget.isGroup ? senderColor.withOpacity(0.2) : Colors.grey[300],
               child: Text(
-                widget.contact['avatar'] ?? (widget.isGroup ? '👥' : 'T'),
-                style: const TextStyle(
-                  color: Colors.black87,
+                widget.isGroup && senderName != null && senderName.isNotEmpty
+                    ? _getInitialsFromName(senderName)
+                    : _getInitialsFromName(widget.contact['name']?.toString() ?? 'Teacher'),
+                style: TextStyle(
+                  color: widget.isGroup ? senderColor : Colors.black87,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -6087,7 +6701,21 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
           ],
           // Message bubble
           Flexible(
-            child: Container(
+            child: Dismissible(
+              key: Key("msg_${message['message_id'] ?? DateTime.now().millisecondsSinceEpoch}"),
+              direction: DismissDirection.startToEnd,
+              confirmDismiss: (direction) async {
+                _onReply(message);
+                return false;
+              },
+              background: Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                child: const Icon(Icons.reply, color: Color(0xFF667eea), size: 24),
+              ),
+            child: GestureDetector(
+              onLongPress: !isTeacher && !isDeleted ? () => _showMessageOptions(message) : null,
+              child: Container(
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.65,
               ),
@@ -6113,15 +6741,96 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (widget.isGroup && isTeacher && senderName != null && senderName.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        senderName,
+                        style: TextStyle(
+                          color: senderColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  if ((message['replied_to_id'] != null || message['replied_to_sender_name'] != null || message['replied_to_text'] != null) && !isDeleted)
+                    Builder(
+                      builder: (context) {
+                        String replySenderName = message['replied_to_sender_name']?.toString() ?? 'Unknown';
+                        String replyText = message['replied_to_text']?.toString() ?? '';
+                        
+                        // If reply metadata is missing, try to find the original message
+                        if (replySenderName == 'Unknown' || replyText.isEmpty) {
+                          final repliedMessage = _messages.firstWhere(
+                            (m) => m['message_id']?.toString() == message['replied_to_id']?.toString(),
+                            orElse: () => <String, dynamic>{},
+                          );
+                          
+                          if (replySenderName == 'Unknown' && repliedMessage.isNotEmpty) {
+                            if (repliedMessage['isTeacher'] == false) {
+                              replySenderName = 'You';
+                            } else if (repliedMessage['sender_name'] != null && repliedMessage['sender_name'].toString().isNotEmpty) {
+                              replySenderName = repliedMessage['sender_name'].toString();
+                            } else if (widget.isGroup) {
+                              replySenderName = 'Unknown';
+                            } else {
+                              replySenderName = widget.contact['name'] ?? 'Teacher';
+                            }
+                          }
+                          
+                          if (replyText.isEmpty && repliedMessage.isNotEmpty) {
+                            replyText = (repliedMessage['text']?.toString() ?? '').isNotEmpty
+                                ? repliedMessage['text'].toString()
+                                : (repliedMessage['attachment'] != null || repliedMessage['attachment_url'] != null ? '📷 Photo' : 'Attachment');
+                          }
+                        }
+                        
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(8),
+                          margin: const EdgeInsets.only(bottom: 6),
+                          decoration: BoxDecoration(
+                            color: isTeacher ? Colors.black.withOpacity(0.05) : Colors.black.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(8),
+                            border: const Border(left: BorderSide(color: Color(0xFF667eea), width: 4)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                replySenderName,
+                                style: const TextStyle(
+                                  color: Color(0xFF667eea),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                replyText.trim().isNotEmpty ? replyText : 'Attachment',
+                                style: TextStyle(
+                                  color: isTeacher ? Colors.black54 : Colors.black87,
+                                  fontSize: 12,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   if (attachmentUrl != null)
                     (attachmentUrl.toLowerCase().endsWith('.jpg') ||
                             attachmentUrl.toLowerCase().endsWith('.png') ||
-                            attachmentUrl.toLowerCase().endsWith('.jpeg'))
+                            attachmentUrl.toLowerCase().endsWith('.jpeg') ||
+                            attachmentUrl.toLowerCase().endsWith('.webp') ||
+                            attachmentUrl.toLowerCase().endsWith('.gif'))
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: GestureDetector(
-                              onTap: () => _downloadAttachment(
-                                  attachmentUrl, attachmentName),
+                              onTap: () => _showImagePreview(attachmentUrl, attachmentName),
                               child: attachmentUrl.startsWith('http')
                                   ? Image.network(
                                       attachmentUrl,
@@ -6165,30 +6874,44 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
                                     ),
                             ),
                           )
-                        : Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.insert_drive_file, size: 20),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    attachmentName ?? 'Document',
-                                    style: const TextStyle(fontSize: 13),
-                                    overflow: TextOverflow.ellipsis,
+                        : GestureDetector(
+                            onTap: () => _downloadAttachment(attachmentUrl, attachmentName),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.insert_drive_file, size: 20),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      attachmentName ?? 'Document',
+                                      style: const TextStyle(fontSize: 13),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.download, size: 18, color: Color(0xFF667eea)),
+                                ],
+                              ),
                             ),
                           ),
-                  if (attachmentUrl != null && text.isNotEmpty)
+                  if (attachmentUrl != null && (text.isNotEmpty || isDeleted))
                     const SizedBox(height: 8),
-                  if (text.isNotEmpty)
+                  if (isDeleted)
+                    Text(
+                      '🚫 This message was deleted',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 15,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  else if (text.isNotEmpty)
                     Text(
                       text,
                       style: const TextStyle(
@@ -6202,7 +6925,7 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        time,
+                        time + (isEdited && !isDeleted ? ' (Edited)' : ''),
                         style: TextStyle(
                           color: isTeacher ? Colors.grey[600] : Colors.black54,
                           fontSize: 11,
@@ -6221,10 +6944,143 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
                 ],
               ),
             ),
+            ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  void _showMessageOptions(Map<String, dynamic> message) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Edit'),
+              onTap: () {
+                Navigator.pop(context);
+                _onEdit(message);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _onDelete(message);
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReplyPreview() {
+    if (_replyingTo == null) return const SizedBox.shrink();
+
+    // Use actual sender name: from message when present (groups/backend), else contact or You
+    final isTeacherMsg = _replyingTo!['isTeacher'] == true;
+    final senderName = _replyingTo!['sender_name']?.toString().trim().isNotEmpty == true
+        ? _replyingTo!['sender_name'].toString()
+        : (isTeacherMsg
+            ? (widget.contact['name'] ?? (widget.isGroup ? 'Group' : 'Teacher'))
+            : 'You');
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: const Border(left: BorderSide(color: Color(0xFF667eea), width: 4)),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              "Replying to $senderName",
+              style: const TextStyle(color: Color(0xFF667eea), fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            Text(_replyingTo!['text'] ?? '${_replyingTo!["attachment_name"] ?? "Attachment"}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+          ])),
+          IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => setState(() => _replyingTo = null)),
+        ],
+      ),
+    );
+  }
+
+  void _onEdit(Map<String, dynamic> message) {
+    setState(() {
+      _editingMessage = message;
+      _messageController.text = message['text'] ?? '';
+      _replyingTo = null;
+      _isTextFieldEmpty = false;
+    });
+  }
+
+  void _onReply(Map<String, dynamic> message) {
+    setState(() {
+      _replyingTo = message;
+      _editingMessage = null;
+    });
+  }
+
+  void _onDelete(Map<String, dynamic> message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Message'),
+        content: const Text('Are you sure you want to delete this message? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _softDeleteMessage(message);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _softDeleteMessage(Map<String, dynamic> message) async {
+    final messageId = message['message_id']?.toString() ?? '';
+    if (messageId.isEmpty) return;
+
+    // Optimistic update
+    setState(() {
+      final index = _messages.indexWhere((m) => m['message_id'] == messageId);
+      if (index != -1) {
+        final oldMsg = _messages[index];
+        _messages[index] = Map<String, dynamic>.from(oldMsg)..addAll({
+          'text': "This message was deleted",
+          'is_deleted': true,
+          'attachment_url': null,
+          'attachment_name': null,
+        });
+      }
+    });
+
+    final success = await api.ApiService.deleteMessage(messageId);
+    if (!success) {
+      _showSnackBar('Failed to delete message');
+    }
   }
 
   void _showSnackBar(String message) {
@@ -6241,15 +7097,15 @@ class _UnifiedChatScreenState extends State<_UnifiedChatScreen> {
 class GroupInfoDialog extends StatefulWidget {
   final String groupId;
   final String groupName;
+  final String currentUserId;
   final Function(String) onNameUpdated;
-  final bool isReadOnly;
 
   const GroupInfoDialog({
     Key? key,
     required this.groupId,
     required this.groupName,
+    required this.currentUserId,
     required this.onNameUpdated,
-    this.isReadOnly = false,
   }) : super(key: key);
 
   @override
@@ -6260,6 +7116,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _members = [];
   String _currentName = '';
+  bool _isCreator = false;
 
   @override
   void initState() {
@@ -6275,8 +7132,11 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
       if (data.isNotEmpty) {
         setState(() {
           _members = List<Map<String, dynamic>>.from(data['members'] ?? []);
-          _currentName = data['group_name'] ?? _currentName;
+          _currentName = data['group_name']?.toString() ?? _currentName;
+          _isCreator = data['is_creator'] == true;
         });
+        final latestName = data['group_name']?.toString() ?? _currentName;
+        if (latestName.isNotEmpty) widget.onNameUpdated(latestName);
       }
     } catch (e) {
       debugPrint('Error fetching group members: $e');
@@ -6285,123 +7145,235 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
     }
   }
 
+  String _memberSubtext(Map<String, dynamic> member) {
+    final role = member['role']?.toString() ?? '';
+    if (role == 'student_parent') {
+      final cn = member['class_name']?.toString();
+      final sec = member['section']?.toString();
+      if (cn != null && cn.isNotEmpty) return 'Class $cn${sec != null && sec.isNotEmpty ? ' - $sec' : ''}';
+    } else if (role == 'teacher') {
+      final sub = member['subject']?.toString();
+      if (sub != null && sub.isNotEmpty) return sub;
+    }
+    return '';
+  }
+
+  Future<void> _editName() async {
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final c = TextEditingController(text: _currentName);
+        return AlertDialog(
+          title: const Text('Edit group name'),
+          content: TextField(controller: c, decoration: const InputDecoration(labelText: 'Group name'), autofocus: true),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(ctx, c.text.trim()), child: const Text('Save')),
+          ],
+        );
+      },
+    );
+    if (newName != null && newName.isNotEmpty && newName != _currentName) {
+      final ok = await api.ApiService.updateGroupName(widget.groupId, newName);
+      if (ok && mounted) {
+        setState(() => _currentName = newName);
+        widget.onNameUpdated(newName);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Group name updated')));
+      }
+    }
+  }
+
+  Future<void> _addParticipants() async {
+    final addable = await api.ApiService.getAddableGroupMembers(widget.groupId);
+    if (!mounted) return;
+    final selected = await showDialog<List<String>>(
+      context: context,
+      builder: (ctx) => _AddMembersSheet(users: addable),
+    );
+    if (selected != null && selected.isNotEmpty) {
+      final ok = await api.ApiService.addGroupMembers(widget.groupId, selected);
+      if (ok && mounted) {
+        _fetchMembers();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Members added')));
+      }
+    }
+  }
+
+  Future<void> _removeMember(String userId, String name) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove member'),
+        content: Text('Remove $name from the group?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), style: TextButton.styleFrom(foregroundColor: Colors.red), child: const Text('Remove')),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      final ok = await api.ApiService.removeGroupMember(widget.groupId, userId);
+      if (ok && mounted) {
+        setState(() => _members.removeWhere((m) => m['user_id']?.toString() == userId));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$name removed')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
       child: Container(
-        width: 400,
-        height: 600,
-        padding: const EdgeInsets.all(20),
+        width: 420,
+        height: 640, // Fixed height
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Fixed header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Group Info',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
+                const Text('Group info', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
               ],
             ),
-            const Divider(),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: const Color(0xFF667eea),
-                    child: const Icon(Icons.group, color: Colors.white),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _currentName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            // Scrollable content
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: _isCreator ? _editName : null,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+                        child: Row(
+                          children: [
+                            CircleAvatar(radius: 28, backgroundColor: const Color(0xFF667eea), child: const Icon(Icons.group, color: Colors.white, size: 32)),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(_currentName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 2),
+                                  Text('${_members.length} participants', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                                  if (_isCreator) Text('Tap to edit name', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                            if (_isCreator) const Icon(Icons.edit, size: 20, color: Color(0xFF667eea)),
+                          ],
                         ),
-                        Text(
-                          '${_members.length} participants',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Participants',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF667eea),
+                    if (_isCreator) ...[
+                      const SizedBox(height: 12),
+                      ListTile(
+                        leading: const Icon(Icons.person_add, color: Color(0xFF667eea)),
+                        title: const Text('Add participants'),
+                        onTap: _addParticipants,
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    const Align(alignment: Alignment.centerLeft, child: Text('Participants', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF667eea)))),
+                    const SizedBox(height: 8),
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _members.length,
+                            itemBuilder: (context, index) {
+                              final member = _members[index];
+                              final uid = member['user_id']?.toString() ?? '';
+                              final name = member['full_name']?.toString() ?? member['username'] ?? '?';
+                              final sub = _memberSubtext(member);
+                              final canRemove = _isCreator && uid != widget.currentUserId;
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.grey[300],
+                                  child: Text((name.isNotEmpty ? name[0] : '?').toUpperCase(), style: const TextStyle(color: Colors.black87)),
+                                ),
+                                title: Text(name),
+                                subtitle: sub.isNotEmpty ? Text(sub, style: TextStyle(fontSize: 12, color: Colors.grey[600])) : null,
+                                trailing: canRemove
+                                    ? IconButton(
+                                        icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 22),
+                                        onPressed: () => _removeMember(uid, name),
+                                      )
+                                    : null,
+                              );
+                            },
+                          ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: _members.length,
-                      itemBuilder: (context, index) {
-                        final member = _members[index];
-                        final name = member['full_name'] ?? member['username'];
-                        final className = member['class_name'];
-                        final section = member['section'];
-                        final grade = member['grade'];
-                        
-                        String sub = '';
-                        if (className != null && className.toString().toLowerCase() != 'null') {
-                          sub = 'Class $className';
-                          if (section != null && section.toString().toLowerCase() != 'null') sub += '-$section';
-                        }
-                        if (grade != null && grade.toString().toLowerCase() != 'null') {
-                          if (sub.isNotEmpty) sub += ' • ';
-                          sub += 'Grade $grade';
-                        }
-                        
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.grey[300],
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : '?',
-                              style: const TextStyle(color: Colors.black87),
-                            ),
-                          ),
-                          title: Text(name),
-                          subtitle: sub.isNotEmpty ? Text(sub) : null,
-                        );
-                      },
-                    ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AddMembersSheet extends StatefulWidget {
+  final List<dynamic> users;
+
+  const _AddMembersSheet({required this.users});
+
+  @override
+  State<_AddMembersSheet> createState() => _AddMembersSheetState();
+}
+
+class _AddMembersSheetState extends State<_AddMembersSheet> {
+  final Set<String> _selected = {};
+
+  String _subtext(dynamic u) {
+    final role = u['role']?.toString() ?? '';
+    if (role == 'student_parent') {
+      final cn = u['class_name']?.toString();
+      final sec = u['section']?.toString();
+      if (cn != null && cn.isNotEmpty) return 'Class $cn${sec != null && sec.isNotEmpty ? ' - $sec' : ''}';
+    } else if (role == 'teacher') {
+      final sub = u['subject']?.toString();
+      if (sub != null && sub.isNotEmpty) return sub;
+    }
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add participants'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: widget.users.length,
+          itemBuilder: (ctx, i) {
+            final u = widget.users[i] as Map<String, dynamic>;
+            final uid = u['user_id']?.toString() ?? '';
+            final name = u['full_name']?.toString() ?? u['username'] ?? '?';
+            final sub = _subtext(u);
+            final isSelected = _selected.contains(uid);
+            return CheckboxListTile(
+              value: isSelected,
+              onChanged: (v) => setState(() {
+                if (v == true) _selected.add(uid); else _selected.remove(uid);
+              }),
+              title: Text(name),
+              subtitle: sub.isNotEmpty ? Text(sub, style: TextStyle(fontSize: 12, color: Colors.grey[600])) : null,
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context, _selected.toList()), child: const Text('Add')),
+      ],
     );
   }
 }

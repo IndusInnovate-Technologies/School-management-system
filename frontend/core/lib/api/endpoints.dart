@@ -1,13 +1,19 @@
 /// All backend endpoints centralized
 class Endpoints {
-  // Base URL - Update this to match your Django backend
-  static const String baseUrl = 'http://localhost:8000/api';
+  // Base URL - Set at startup (e.g. use 10.0.2.2:8000 on Android emulator)
+  static String _baseUrl = 'http://localhost:8000/api';
+  static String get baseUrl => _baseUrl;
+  static set baseUrl(String value) {
+    _baseUrl = value;
+  }
 
   // Authentication endpoints
   static const String login = '/auth/login/';
   static const String roleLogin = '/auth/role-login/';
   static const String logout = '/auth/logout/';
   static const String refreshToken = '/auth/refresh/';
+  static const String myPushNotifications = '/auth/my-push-notifications/';
+  static const String myPushNotificationsMarkRead = '/auth/my-push-notifications/mark-read/';
   static const String register = '/auth/register/';
   static const String routes = '/auth/routes/';
   static const String createPassword = '/auth/create-password/';
@@ -42,6 +48,8 @@ class Endpoints {
   static const String gallery = '/management-admin/galleries/';
   static const String timetables = '/management-admin/timetables/';
   static const String notifications = '/management/notifications';
+  static const String sendPush = '/management-admin/send-push/';
+  static const String pushNotificationLogs = '/management-admin/push-notification-logs/';
   static const String calendar = '/management/calendar';
   static const String campusLife = '/management/campus-life';
 
@@ -73,6 +81,9 @@ class Endpoints {
   static const String parentCalendar = '/parent/calendar';
   static const String parentGallery = '/parent/gallery';
   static const String parentBus = '/parent/bus';
+  /// Bus details for student portal (by student_id) - returns assignments with bus_details, stop_details
+  static const String studentParentBusDetails = '/student-parent/bus-details/';
+  static const String studentParentBusAttendance = '/student-parent/bus-attendance/';
   static const String parentFees = '/parent/fees';
   static const String parentExtracurricular = '/parent/extracurricular';
 

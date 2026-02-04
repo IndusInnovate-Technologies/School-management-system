@@ -42,7 +42,9 @@ dependencies:
   core:
     path: ../core
   shared_preferences: ^2.2.2
-  
+  firebase_core: ^3.8.1
+  firebase_messaging: ^15.1.5
+
   # App packages for navigation
   teacher_app:
     path: ../apps/teacher_main_folder

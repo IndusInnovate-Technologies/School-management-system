@@ -1,7 +1,8 @@
-﻿"""
+"""
 Views for student_parent app - API layer for App 4
 """
 from rest_framework import viewsets, status, filters, permissions
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 import uuid
 import logging
 
@@ -22,8 +23,9 @@ from .serializers import (
 from main_login.permissions import IsStudentParent, IsTeacher
 from rest_framework import permissions
 from main_login.mixins import SchoolFilterMixin
-from management_admin.models import Student, Teacher, Department, CampusFeature, NewAdmission
-from management_admin.serializers import StudentSerializer
+from management_admin.models import Student, Teacher, Department, CampusFeature, NewAdmission, BusStopStudent, BusStopAttendance
+from management_admin.serializers import StudentSerializer, BusStopStudentSerializer
+from datetime import timedelta, datetime
 from teacher.models import Exam, Timetable, Assignment, Grade, Attendance, StudyMaterial, Project, Task, Homework
 from teacher.serializers import ProjectSerializer, TaskSerializer, ClassStudentSerializer as TeacherClassStudentSerializer, HomeworkSerializer
 
@@ -372,6 +374,99 @@ class ChatGroupViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
         for member in group.members.all():
             logger.info(f"  - Final member: {member.username} (ID: {member.user_id})")
     
+    @action(detail=True, methods=['post'], url_path='mark_read')
+    def mark_group_read(self, request, pk=None):
+        """Mark all messages in a group as read for the current user."""
+        group = self.get_object()
+        
+        # Verify user is a member
+        if not group.members.filter(user_id=request.user.user_id).exists():
+            return Response(
+                {'error': 'You are not a member of this group'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Mark all unread messages in this group (not sent by current user) as read
+        updated_count = ChatMessage.objects.filter(
+            group=group,
+            is_read=False
+        ).exclude(sender=request.user).update(
+            is_read=True,
+            read_at=timezone.now()
+        )
+        
+        # Notify all group members (senders see double tick for their messages)
+        if updated_count > 0:
+            try:
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f'group_{group.group_id}',
+                    {
+                        'type': 'chat.messages_read',
+                        'group_id': str(group.group_id),
+                        'read_by_user_id': str(request.user.user_id),
+                    }
+                )
+            except Exception as broadcast_err:
+                import logging
+                logging.getLogger(__name__).warning(f'Failed to broadcast group messages_read: {broadcast_err}')
+        
+        return Response({
+            'status': 'success',
+            'messages_marked_read': updated_count
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get', 'post'])
+    def groups(self, request):
+        """
+        GET: List groups with last message and unread count.
+        POST: Create a new group.
+        """
+        if request.method == 'POST':
+            return self.create(request)
+        
+        # GET request - list groups
+        user = request.user
+        groups = self.get_queryset()
+        
+        result = []
+        for group in groups:
+            # Get last message in this group
+            last_msg = ChatMessage.objects.filter(
+                group=group,
+                is_deleted=False
+            ).order_by('-created_at').first()
+            
+            # Get unread count
+            unread_count = ChatMessage.objects.filter(
+                group=group,
+                is_read=False,
+                is_deleted=False
+            ).exclude(sender=user).count()
+            
+            group_data = ChatGroupSerializer(group, context={'request': request}).data
+            group_data['last_message'] = ChatMessageSerializer(last_msg, context={'request': request}).data if last_msg else None
+            group_data['unread_count'] = unread_count
+            group_data['timestamp'] = last_msg.created_at if last_msg else group.created_at
+            
+            result.append(group_data)
+        
+        # Sort by timestamp desc
+        result.sort(key=lambda x: x['timestamp'], reverse=True)
+        return Response(result)
+
+    def destroy(self, request, *args, **kwargs):
+        """Only creator can delete the group"""
+        instance = self.get_object()
+        if instance.created_by != request.user:
+            return Response(
+                {'error': 'Only the group creator can delete this group'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'])
     def add_members(self, request, pk=None):
         """Add members to group"""
@@ -392,14 +487,50 @@ class ChatGroupViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
             )
         
         from main_login.models import User
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        from .models import ChatMessage
+        from django.utils import timezone
+        import uuid
+        
         members = User.objects.filter(user_id__in=member_ids)
         group.members.add(*members)
         
+        # Create system messages for each added member
+        sender_name = f"{request.user.first_name or ''} {request.user.last_name or ''}".strip() or request.user.username
+        for member in members:
+            member_name = f"{member.first_name or ''} {member.last_name or ''}".strip() or member.username
+            system_message = ChatMessage.objects.create(
+                message_id=uuid.uuid4(),
+                sender=request.user,
+                group=group,
+                message_type='system',
+                message_text=f'{sender_name} added {member_name}',
+                school_id=group.school_id,
+                school_name=group.school_name,
+            )
+        
+        try:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'group_{group.group_id}',
+                {
+                    'type': 'chat.group_updated',
+                    'group_id': str(group.group_id),
+                    'group_name': group.name,
+                    'updated_type': 'members_added',
+                    'member_ids': list(member_ids),
+                    'member_names': [f"{m.first_name or ''} {m.last_name or ''}".strip() or m.username for m in members],
+                    'added_by': sender_name,
+                }
+            )
+        except Exception:
+            pass
         return Response({
             'status': 'success',
             'members_added': members.count()
         })
-    
+
     @action(detail=True, methods=['post'])
     def remove_members(self, request, pk=None):
         """Remove members from group"""
@@ -420,48 +551,50 @@ class ChatGroupViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
             )
         
         from main_login.models import User
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        from .models import ChatMessage
+        from django.utils import timezone
+        import uuid
+        
         members = User.objects.filter(user_id__in=member_ids)
         group.members.remove(*members)
-
-        # Broadcast removal to each removed member's personal channel
-        try:
-            from channels.layers import get_channel_layer
-            from asgiref.sync import async_to_sync
-            channel_layer = get_channel_layer()
-            for member in members:
-                # Assuming student personal channel naming convention
-                student_room = f"student_{member.username.lower().replace(' ', '_')}"
-                async_to_sync(channel_layer.group_send)(
-                    student_room,
-                    {
-                        'type': 'message',
-                        'message': 'You have been removed from the group',
-                        'message_type': 'group_removal',
-                        'group_id': str(group.group_id),
-                        'group_name': group.name
-                    }
-                )
-                # Also broadcast to the group channel so other members see the update
-                group_room = f"group_{group.group_id}"
-                async_to_sync(channel_layer.group_send)(
-                    group_room,
-                    {
-                        'type': 'chat.message',
-                        'type_msg': 'info',
-                        'message': f'{member.username} was removed from the group',
-                        'sender': 'System',
-                        'group_id': str(group.group_id),
-                        'timestamp': str(uuid.uuid4()) # dummy for uniqueness if needed, but usually timestamp is better
-                    }
-                )
-        except Exception as e:
-            print(f"Error broadcasting removal: {e}")
         
+        # Create system messages for each removed member
+        sender_name = f"{request.user.first_name or ''} {request.user.last_name or ''}".strip() or request.user.username
+        for member in members:
+            member_name = f"{member.first_name or ''} {member.last_name or ''}".strip() or member.username
+            system_message = ChatMessage.objects.create(
+                message_id=uuid.uuid4(),
+                sender=request.user,
+                group=group,
+                message_type='system',
+                message_text=f'{sender_name} removed {member_name} from group',
+                school_id=group.school_id,
+                school_name=group.school_name,
+            )
+        
+        try:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'group_{group.group_id}',
+                {
+                    'type': 'chat.group_updated',
+                    'group_id': str(group.group_id),
+                    'group_name': group.name,
+                    'updated_type': 'members_removed',
+                    'member_ids': list(member_ids),
+                    'member_names': [f"{m.first_name or ''} {m.last_name or ''}".strip() or m.username for m in members],
+                    'removed_by': sender_name,
+                }
+            )
+        except Exception:
+            pass
         return Response({
             'status': 'success',
             'members_removed': members.count()
         })
-    
+
     @action(detail=True, methods=['get'])
     def get_members(self, request, pk=None):
         """Get detailed member list with class/grade/role info"""
@@ -488,17 +621,25 @@ class ChatGroupViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
                 'subject': None,
             }
             
-            # Try to get student details
+            # Try to get student details (Class & Section for subtext)
             if role_name == 'student_parent':
                 try:
                     from management_admin.models import Student
                     student = Student.objects.filter(user=member).first()
                     if student:
-                        if student.class_obj:
-                            member_info['class_name'] = student.class_obj.name
-                            member_info['section'] = student.class_obj.section
-                        member_info['grade'] = student.grade
-                except:
+                        # Prefer class_obj from ClassStudent (teacher app) if available
+                        if hasattr(student, 'student_classes'):
+                            sc = student.student_classes.select_related('class_obj').first()
+                            if sc and sc.class_obj:
+                                member_info['class_name'] = sc.class_obj.name
+                                member_info['section'] = sc.class_obj.section
+                        if member_info.get('class_name') is None and getattr(student, 'applying_class', None):
+                            member_info['class_name'] = student.applying_class
+                        if member_info.get('section') is None and getattr(student, 'section', None):
+                            member_info['section'] = student.section
+                        if getattr(student, 'grade', None):
+                            member_info['grade'] = student.grade
+                except Exception:
                     pass
             
             # Try to get teacher details
@@ -513,14 +654,101 @@ class ChatGroupViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
             
             members_data.append(member_info)
         
+        current_user_id = str(request.user.user_id) if request.user else None
         return Response({
             'group_id': str(group.group_id),
             'group_name': group.name,
             'created_by': creator_name,
             'created_by_id': str(group.created_by.user_id) if group.created_by else None,
+            'is_creator': current_user_id == (str(group.created_by.user_id) if group.created_by else None),
             'member_count': len(members_data),
             'members': members_data
         })
+
+    @action(detail=True, methods=['get'], url_path='list_addable_members')
+    def list_addable_members(self, request, pk=None):
+        """List users (students + teachers) that can be added to the group, with Class/Section and Subject."""
+        group = self.get_object()
+        if group.created_by != request.user:
+            return Response(
+                {'error': 'Only group creator can add members'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        from main_login.models import User
+        from main_login.utils import get_user_school_id
+        school_id = get_user_school_id(request.user) or group.school_id
+        current_member_ids = set(group.members.values_list('user_id', flat=True))
+        # Users in same school with role teacher or student_parent, not already in group
+        users = User.objects.filter(
+            models.Q(role__name='teacher') | models.Q(role__name='student_parent'),
+            school_id=school_id
+        ).exclude(user_id__in=current_member_ids).select_related('role').distinct()
+        result = []
+        for user in users:
+            role_name = user.role.name if user.role else 'unknown'
+            entry = {
+                'user_id': str(user.user_id),
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'full_name': f"{user.first_name} {user.last_name}".strip() or user.username,
+                'role': role_name,
+                'class_name': None,
+                'section': None,
+                'subject': None,
+            }
+            if role_name == 'student_parent':
+                try:
+                    from management_admin.models import Student
+                    student = Student.objects.filter(user=user).first()
+                    if student:
+                        if hasattr(student, 'student_classes'):
+                            sc = student.student_classes.select_related('class_obj').first()
+                            if sc and sc.class_obj:
+                                entry['class_name'] = sc.class_obj.name
+                                entry['section'] = sc.class_obj.section
+                        if entry.get('class_name') is None:
+                            entry['class_name'] = getattr(student, 'applying_class', None)
+                        if entry.get('section') is None:
+                            entry['section'] = getattr(student, 'section', None)
+                except Exception:
+                    pass
+            elif role_name == 'teacher':
+                try:
+                    from management_admin.models import Teacher
+                    teacher = Teacher.objects.filter(user=user).first()
+                    if teacher:
+                        entry['subject'] = teacher.subject_specialization
+                except Exception:
+                    pass
+            result.append(entry)
+        return Response({'users': result})
+
+    def perform_update(self, serializer):
+        """Only creator can update the group; broadcast name change to participants."""
+        instance = self.get_object()
+        if instance.created_by != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only the group creator can edit this group")
+        old_name = instance.name
+        serializer.save()
+        new_name = serializer.instance.name
+        if new_name != old_name:
+            try:
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f'group_{instance.group_id}',
+                    {
+                        'type': 'chat.group_updated',
+                        'group_id': str(instance.group_id),
+                        'group_name': new_name,
+                        'updated_type': 'name',
+                    }
+                )
+            except Exception:
+                pass
 
 
 class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
@@ -528,6 +756,7 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
     queryset = ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
     permission_classes = [IsAuthenticated, IsTeacherOrStudentParent]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]  # Allow file uploads (images/docs)
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['message_type', 'is_read']
     search_fields = ['message_text']
@@ -599,10 +828,10 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
         # For detail views (retrieve, delete, etc.), allow access to any message the user is part of
         if self.action != 'list':
             return ChatMessage.objects.filter(
+                Q(group__members=self.request.user) | 
                 Q(sender=self.request.user) | 
-                Q(recipient=self.request.user) |
-                Q(group__members=self.request.user)
-            ).filter(is_deleted=False).distinct()
+                Q(recipient=self.request.user)
+            ).distinct()
         
         # LIST ACTION - Strict filtering to separate groups and DMs
         # Check for group_id parameter first
@@ -613,16 +842,14 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
             # Return all messages for this group
             # Note: In a production app, checking membership here is good practice
             return ChatMessage.objects.filter(
-                group__group_id=group_id, 
-                is_deleted=False
+                group__group_id=group_id
             ).order_by('created_at')
 
         # INDIVIDUAL CHAT STRATEGY (1-to-1)
         # Base queryset: messages involving current user, EXCLUDING group messages
         queryset = ChatMessage.objects.filter(
             (Q(recipient=self.request.user) | Q(sender=self.request.user)) &
-            Q(group__isnull=True),  # CRITICAL: Exclude group messages to prevent mixing!
-            is_deleted=False
+            Q(group__isnull=True)  # CRITICAL: Exclude group messages to prevent mixing!
         )
         
         # Handle filtering parameters
@@ -721,13 +948,30 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
             if not recipient:
                 raise ValueError("Recipient not found")
 
-        # Save the message
-        instance = serializer.save(
-            sender=self.request.user,
-            recipient=recipient,
-            group=group,
-            message_type=message_type
-        )
+        # Resolve replied_to from request (message_id of the message being replied to)
+        replied_to_id = self.request.data.get('replied_to')
+        replied_to_obj = None
+        if replied_to_id:
+            try:
+                replied_to_obj = ChatMessage.objects.filter(message_id=replied_to_id).first()
+            except (ValueError, TypeError):
+                pass
+
+        # Build save kwargs: explicitly pass attachment, message_text, and replied_to so they are always saved
+        save_kwargs = {
+            'sender': self.request.user,
+            'recipient': recipient,
+            'group': group,
+            'message_type': message_type,
+            'message_text': (self.request.data.get('message_text') or '').strip() or None,
+        }
+        if attachment is not None:
+            save_kwargs['attachment'] = attachment
+        if replied_to_obj is not None:
+            save_kwargs['replied_to'] = replied_to_obj
+
+        # Save the message (attachment and replied_to from request are now explicitly passed)
+        instance = serializer.save(**save_kwargs)
         
         # Get sender name
         sender_name = self.request.user.username
@@ -754,9 +998,21 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
                     'message_id': str(instance.message_id),
                     'timestamp': instance.created_at.isoformat(),
                     'attachment_url': self.request.build_absolute_uri(instance.attachment.url) if instance.attachment else None,
-                    'attachment_name': instance.attachment_name,
+                    'attachment_name': instance.attachment_name or (instance.attachment.name if instance.attachment else None),
                     'replied_to_id': str(instance.replied_to.message_id) if instance.replied_to else None,
+                    'replied_to_sender_name': None,
+                    'replied_to_text': None,
                 }
+                if instance.replied_to:
+                    rt = instance.replied_to
+                    if rt.is_deleted:
+                        broadcast_data['replied_to_sender_name'] = None
+                        broadcast_data['replied_to_text'] = 'This message was deleted'
+                    else:
+                        rts = rt.sender
+                        rts_name = (f"{rts.first_name or ''} {rts.last_name or ''}".strip() or rts.username) if rts else 'Unknown'
+                        broadcast_data['replied_to_sender_name'] = rts_name
+                        broadcast_data['replied_to_text'] = rt.message_text or (f"[{rt.attachment_name}]" if rt.attachment_name else '[Attachment]')
             else:
                 # 1-to-1 message
                 # Use normalized usernames to match frontend subscription logic
@@ -785,11 +1041,30 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
                     'message_id': str(instance.message_id),
                     'timestamp': instance.created_at.isoformat(),
                     'attachment_url': self.request.build_absolute_uri(instance.attachment.url) if instance.attachment else None,
-                    'attachment_name': instance.attachment_name,
+                    'attachment_name': instance.attachment_name or (instance.attachment.name if instance.attachment else None),
                     'replied_to_id': str(instance.replied_to.message_id) if instance.replied_to else None,
+                    'replied_to_sender_name': None,
+                    'replied_to_text': None,
                 }
+                if instance.replied_to:
+                    rt = instance.replied_to
+                    if rt.is_deleted:
+                        broadcast_data['replied_to_sender_name'] = None
+                        broadcast_data['replied_to_text'] = 'This message was deleted'
+                    else:
+                        rts = rt.sender
+                        rts_name = (f"{rts.first_name or ''} {rts.last_name or ''}".strip() or rts.username) if rts else 'Unknown'
+                        broadcast_data['replied_to_sender_name'] = rts_name
+                        broadcast_data['replied_to_text'] = rt.message_text or (f"[{rt.attachment_name}]" if rt.attachment_name else '[Attachment]')
             
             async_to_sync(channel_layer.group_send)(group_name, broadcast_data)
+            # For 1-to-1: also send to recipient's personal channel so receiver gets message when both are open
+            if not group and recipient:
+                try:
+                    async_to_sync(channel_layer.group_send)(f'user_{recipient.user_id}', broadcast_data)
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f'Failed to broadcast to recipient personal channel: {e}')
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
@@ -801,6 +1076,12 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
         """
         from channels.layers import get_channel_layer
         from asgiref.sync import async_to_sync
+        
+        from django.utils import timezone
+        
+        # Set is_edited flag
+        serializer.instance.is_edited = True
+        serializer.instance.edited_at = timezone.now()
         
         instance = serializer.save()
         
@@ -897,6 +1178,22 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
             
             logger.info(f'Successfully marked {updated_count} messages as read in conversation with {other_user_id}')
             
+            # Notify the sender (other_user) so they see double tick (WhatsApp-like read receipt)
+            if updated_count > 0:
+                try:
+                    from channels.layers import get_channel_layer
+                    from asgiref.sync import async_to_sync
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f'user_{other_user_id}',
+                        {
+                            'type': 'chat.messages_read',
+                            'read_by_user_id': str(current_user.user_id),
+                        }
+                    )
+                except Exception as broadcast_err:
+                    logger.warning(f'Failed to broadcast messages_read: {broadcast_err}')
+            
             return Response({
                 'status': 'success',
                 'messages_marked_read': updated_count
@@ -936,11 +1233,11 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
             except User.DoesNotExist:
                 continue
                 
-            # Get last message
+            # get last message
             last_msg = ChatMessage.objects.filter(
                 (Q(sender=user) & Q(recipient=contact)) |
                 (Q(sender=contact) & Q(recipient=user))
-            ).filter(is_deleted=False).order_by('-created_at').first()
+            ).order_by('-created_at').first()
             
             if not last_msg:
                 continue
@@ -952,8 +1249,7 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
                 unread_count = ChatMessage.objects.filter(
                     sender=contact,
                     recipient=user,
-                    is_read=False,
-                    is_deleted=False
+                    is_read=False
                 ).count()
             else:
                 # Last message was from user to contact - don't show unread badge
@@ -999,6 +1295,35 @@ class ChatMessageViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
         message.deleted_at = timezone.now()
         message.save()
         
+        # Broadcast the deletion
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            
+            # Determine room/group
+            if message.group:
+                group_name = f'group_{message.group.group_id}'
+            else:
+                s_name = self._normalize_name(message.sender.username)
+                r_name = self._normalize_name(message.recipient.username)
+                usernames = sorted([s_name, r_name])
+                room_id = "_".join(usernames)
+                group_name = f'teacher-student_{room_id}'
+            
+            async_to_sync(channel_layer.group_send)(
+                group_name,
+                {
+                    'type': 'chat.message_deleted',
+                    'message_id': str(message.message_id),
+                    'sender_id': str(message.sender.user_id),
+                }
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to broadcast chat message delete: {str(e)}")
+            
         return Response({
             'status': 'success',
             'message': 'Message deleted successfully'
@@ -2205,6 +2530,147 @@ def student_profile(request):
         status=status.HTTP_404_NOT_FOUND
     )
 
+
+def _resolve_student_for_bus(request):
+    """
+    Resolve the student for bus details: must be a child of the logged-in parent
+    or the logged-in student. Returns (student, error_response) - error_response is set if unauthorized/not found.
+    """
+    user = request.user
+    student_id_param = request.query_params.get('student_id')
+
+    # Parent: get student from their children
+    try:
+        parent = Parent.objects.filter(user=user).first()
+        if parent and parent.students.exists():
+            if student_id_param:
+                if student_id_param.isdigit():
+                    student = parent.students.filter(pk=student_id_param).first()
+                else:
+                    student = parent.students.filter(student_id=student_id_param).first()
+            else:
+                student = parent.students.first()
+            if student:
+                return student, None
+    except Exception:
+        pass
+
+    # Logged-in as student (user linked to a Student)
+    student = Student.objects.filter(user=user).first()
+    if student:
+        if student_id_param and student_id_param != str(student.student_id) and student_id_param != str(student.pk):
+            return None, Response(
+                {'error': 'You can only view bus details for your own profile.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return student, None
+
+    # Fallback: student by email (e.g. same user is student)
+    if user.email:
+        try:
+            student = Student.objects.get(email=user.email)
+            if not student.user:
+                student.user = user
+                student.save()
+            if student_id_param and student_id_param != str(student.student_id) and student_id_param != str(student.pk):
+                return None, Response(
+                    {'error': 'You can only view bus details for your own profile.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            return student, None
+        except Student.DoesNotExist:
+            pass
+
+    return None, Response(
+        {'error': 'Student not found. Please ensure you are linked to a student profile.'},
+        status=status.HTTP_404_NOT_FOUND
+    )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def bus_details(request):
+    """
+    Get bus details for the authenticated user's student (parent's child or logged-in student).
+    Query param: student_id (optional) - which child's bus details to fetch.
+    Returns same structure as management-admin bus-stop-students (results with bus_details, stop_details, etc.)
+    so the student portal bus page can use it.
+    """
+    student, err = _resolve_student_for_bus(request)
+    if err is not None:
+        return err
+
+    assignments = BusStopStudent.objects.filter(student=student).select_related(
+        'bus_stop', 'bus_stop__bus', 'bus_stop__bus__school'
+    ).order_by('bus_stop__route_type', 'bus_stop__stop_order')
+
+    if not assignments.exists():
+        return Response(
+            {'results': [], 'message': 'No bus assigned to this student yet.'},
+            status=status.HTTP_200_OK
+        )
+
+    serializer = BusStopStudentSerializer(assignments, many=True)
+    return Response({'results': serializer.data}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def bus_attendance(request):
+    """
+    Get weekly bus attendance for the authenticated user's student.
+    Query params: student_id (optional), week_start (YYYY-MM-DD, Monday of the week; default: current week).
+    Returns list of { date, status } for each day in that week (status: 'present' | 'absent' | null if no record).
+    """
+    student, err = _resolve_student_for_bus(request)
+    if err is not None:
+        return err
+
+    # Parse week_start (Monday)
+    week_start_str = request.query_params.get('week_start')
+    today = timezone.now().date()
+    if week_start_str:
+        try:
+            week_start = datetime.strptime(week_start_str, '%Y-%m-%d').date()
+            # Normalize to Monday (weekday(): Mon=0, Sun=6)
+            week_start = week_start - timedelta(days=week_start.weekday())
+        except (ValueError, TypeError):
+            week_start = today - timedelta(days=today.weekday())
+    else:
+        week_start = today - timedelta(days=today.weekday())
+
+    week_end = week_start + timedelta(days=6)
+
+    bus_stop_student_ids = BusStopStudent.objects.filter(student=student).values_list('id', flat=True)
+    records = BusStopAttendance.objects.filter(
+        bus_stop_student_id__in=bus_stop_student_ids,
+        attendance_date__gte=week_start,
+        attendance_date__lte=week_end,
+    ).order_by('attendance_date')
+
+    # One entry per day: use first record's status for that day (driver typically marks once per day)
+    by_date = {}
+    for r in records:
+        d = r.attendance_date.isoformat()
+        if d not in by_date:
+            by_date[d] = r.status
+
+    # Build list for all 7 days of the week
+    result = []
+    for i in range(7):
+        d = week_start + timedelta(days=i)
+        result.append({
+            'date': d.isoformat(),
+            'status': by_date.get(d.isoformat()),
+        })
+
+    return Response({
+        'week_start': week_start.isoformat(),
+        'week_end': week_end.isoformat(),
+        'attendance': result,
+    }, status=status.HTTP_200_OK)
+
+
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -2249,111 +2715,3 @@ def school_details(request):
         )
 
 
-class ChatGroupViewSet(viewsets.ModelViewSet):
-    """ViewSet for Chat Groups"""
-    queryset = ChatGroup.objects.all()
-    serializer_class = ChatGroupSerializer
-    permission_classes = [IsAuthenticated]
-    
-    def get_queryset(self):
-        """Filter groups where user is a member"""
-        return ChatGroup.objects.filter(
-            members=self.request.user
-        ).distinct().order_by('-created_at')
-    
-    @action(detail=False, methods=['get', 'post'])
-    def groups(self, request):
-        """
-        GET: List groups with last message and unread count.
-        POST: Create a new group.
-        """
-        if request.method == 'POST':
-            # Create new group
-            serializer = ChatGroupSerializer(data=request.data)
-            if serializer.is_valid():
-                # Save group and add creator as member
-                group = serializer.save(created_by=request.user)
-                
-                # Add members from request data
-                member_ids = request.data.get('member_ids', [])
-                if member_ids:
-                    from main_login.models import User
-                    members = User.objects.filter(user_id__in=member_ids)
-                    group.members.add(*members)
-                
-                # Always add creator as member
-                group.members.add(request.user)
-                
-                return Response(
-                    ChatGroupSerializer(group).data,
-                    status=status.HTTP_201_CREATED
-                )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        # GET request - list groups
-        user = request.user
-        from django.db.models import Q, Max, Count
-        
-        # Get all groups where user is a member
-        groups = self.get_queryset()
-        
-        result = []
-        for group in groups:
-            # Get last message in this group
-            last_msg = ChatMessage.objects.filter(
-                group=group,
-                is_deleted=False
-            ).order_by('-created_at').first()
-            
-            # Get unread count (messages in this group not sent by user that are unread)
-            unread_count = ChatMessage.objects.filter(
-                group=group,
-                is_read=False,
-                is_deleted=False
-            ).exclude(sender=user).count()
-            
-            group_data = ChatGroupSerializer(group).data
-            group_data['last_message'] = ChatMessageSerializer(last_msg).data if last_msg else None
-            group_data['unread_count'] = unread_count
-            group_data['timestamp'] = last_msg.created_at if last_msg else group.created_at
-            
-            result.append(group_data)
-        
-        # Sort by timestamp desc
-        result.sort(key=lambda x: x['timestamp'], reverse=True)
-        
-        return Response(result)
-    
-    @action(detail=True, methods=['post'], url_path='mark_read')
-    def mark_group_read(self, request, pk=None):
-        """
-        Mark all messages in a group as read for the current user.
-        """
-        import logging
-        from django.utils import timezone
-        logger = logging.getLogger(__name__)
-        
-        group = self.get_object()
-        
-        # Verify user is a member
-        if not group.members.filter(user_id=request.user.user_id).exists():
-            return Response(
-                {'error': 'You are not a member of this group'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Mark all unread messages in this group (not sent by current user) as read
-        updated_count = ChatMessage.objects.filter(
-            group=group,
-            is_read=False
-        ).exclude(sender=request.user).update(
-            is_read=True,
-            read_at=timezone.now()
-        )
-        
-        logger.info(f'Marked {updated_count} messages as read in group {group.group_id} for user {request.user.username}')
-        
-        return Response({
-            'status': 'success',
-            'messages_marked_read': updated_count
-        }, status=status.HTTP_200_OK)

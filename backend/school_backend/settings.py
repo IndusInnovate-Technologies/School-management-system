@@ -5,6 +5,7 @@ Django settings for school_backend project.
 from pathlib import Path
 from datetime import timedelta
 import os
+import ssl
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'management_admin',
     'teacher',
     'student_parent',
+    'driver',
 ]
 
 MIDDLEWARE = [
@@ -78,15 +80,15 @@ WSGI_APPLICATION = 'school_backend.wsgi.application'
 # Connection details from: Supabase Dashboard → Settings → Database → Connection Pooling
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django_pg8000',
         'NAME': config('SUPABASE_DB_NAME', default='postgres'),
         'USER': config('SUPABASE_DB_USER', default='postgres.udbhksgcebsrggqpkdcs'),
         'PASSWORD': config('SUPABASE_DB_PASSWORD', default='Sairam@2026!'),
         'HOST': config('SUPABASE_POOLER_HOST', default='aws-1-ap-southeast-2.pooler.supabase.com'),
         'PORT': config('SUPABASE_DB_PORT', default='5432'),
         'OPTIONS': {
-            'connect_timeout': 10,
-            'sslmode': 'require',  # Supabase requires SSL
+            'timeout': 10,
+            'ssl_context': ssl._create_unverified_context(),
         },
     }
 }
@@ -197,6 +199,12 @@ CHANNEL_LAYERS = {
         # For production you'd usually switch to Redis
     },
 }
+
+# Firebase Cloud Messaging (FCM) - path to service account JSON (optional; push disabled if not set)
+# Default: backend/firebase_credentials/school-a97c9-firebase-adminsdk-fbsvc-b11f77baa3.json
+# Override with FIREBASE_CREDENTIALS_PATH in .env if needed.
+_default_firebase_creds = BASE_DIR / 'firebase_credentials' / 'school-a97c9-firebase-adminsdk-fbsvc-b11f77baa3.json'
+FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default=str(_default_firebase_creds))
 
 # Logging Configuration
 LOGGING = {

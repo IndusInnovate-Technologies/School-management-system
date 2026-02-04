@@ -21,6 +21,7 @@ class Role(models.Model):
         ('teacher', 'Teacher'),
         ('student_parent', 'Student/Parent'),
         ('financial', 'Financial Staff'),
+        ('driver', 'Driver'),
     ]
     
     name = models.CharField(max_length=50, choices=ROLE_CHOICES, unique=True)
@@ -247,3 +248,50 @@ class User(AbstractBaseUser, PermissionsMixin):
         db_table = 'users'
         verbose_name = 'User'
         verbose_name_plural = 'Users'
+
+
+# -------------------------
+# FCM DEVICE (Push Notifications)
+# -------------------------
+
+class FCMDevice(models.Model):
+    """Stores FCM registration tokens for push notifications (Android/iOS)"""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='fcm_devices'
+    )
+    token = models.CharField(max_length=255, unique=True, db_index=True)
+    platform = models.CharField(
+        max_length=10,
+        choices=[('android', 'Android'), ('ios', 'iOS')],
+        default='android'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'fcm_devices'
+        verbose_name = 'FCM Device'
+        verbose_name_plural = 'FCM Devices'
+        indexes = [
+            models.Index(fields=['user']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} ({self.platform})"
+
+
+class UserNotificationSeen(models.Model):
+    """Tracks when a user last viewed push notifications (for unread count)."""
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notification_seen'
+    )
+    last_seen_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'user_notification_seen'
+        verbose_name = 'User Notification Seen'
+        verbose_name_plural = 'User Notification Seen'

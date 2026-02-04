@@ -103,6 +103,8 @@ class BusDetailsView extends StatelessWidget {
       'Driver Information',
       [
         _InfoRow('Name', busDetails.driverName),
+        if (busDetails.driverEmail.isNotEmpty)
+          _InfoRow('Email', busDetails.driverEmail),
         _InfoRow('Phone', busDetails.driverPhone),
         _InfoRow('License', busDetails.driverLicense),
         if (busDetails.driverExperience != null)
@@ -118,10 +120,10 @@ class BusDetailsView extends StatelessWidget {
         _InfoRow('Route Name', busDetails.routeName),
         if (busDetails.routeDistance != null)
           _InfoRow('Distance', '${busDetails.routeDistance} km'),
-        _InfoRow('Morning Start', busDetails.morningStartTime),
-        _InfoRow('Morning End', busDetails.morningEndTime),
-        _InfoRow('Afternoon Start', busDetails.afternoonStartTime),
-        _InfoRow('Afternoon End', busDetails.afternoonEndTime),
+        _InfoRow('Morning Start', formatTime24To12h(busDetails.morningStartTime)),
+        _InfoRow('Morning End', formatTime24To12h(busDetails.morningEndTime)),
+        _InfoRow('Afternoon Start', formatTime24To12h(busDetails.afternoonStartTime)),
+        _InfoRow('Afternoon End', formatTime24To12h(busDetails.afternoonEndTime)),
         if (busDetails.notes.isNotEmpty)
           _InfoRow('Notes', busDetails.notes),
       ],
@@ -202,11 +204,10 @@ class BusDetailsView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 5),
-            Text('Stop ID: ${stop.stopId}'),
             if (stop.stopAddress.isNotEmpty)
               Text('Address: ${stop.stopAddress}'),
-            if (stop.stopTime != null)
-              Text('Time: ${stop.stopTime}'),
+            if (stop.stopTime != null && stop.stopTime!.isNotEmpty)
+              Text('Time: ${formatTime24To12h(stop.stopTime)}'),
             Text('Students: ${stop.students.length}'),
           ],
         ),
@@ -241,10 +242,10 @@ class BusDetailsView extends StatelessWidget {
         children: [
           Text('ID: ${student.studentId}'),
           Text('Class: ${student.studentClass} | Section: ${student.studentSection}'),
-          if (student.pickupTime != null)
-            Text('Pickup: ${student.pickupTime}'),
-          if (student.dropoffTime != null)
-            Text('Dropoff: ${student.dropoffTime}'),
+          if (student.pickupTime != null && student.pickupTime!.isNotEmpty)
+            Text('Pickup: ${formatTime24To12h(student.pickupTime)}'),
+          if (student.dropoffTime != null && student.dropoffTime!.isNotEmpty)
+            Text('Dropoff: ${formatTime24To12h(student.dropoffTime)}'),
         ],
       ),
     );

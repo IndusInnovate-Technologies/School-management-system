@@ -5,7 +5,7 @@ import random
 import string
 from rest_framework import viewsets, status, filters
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
@@ -13,8 +13,15 @@ import openpyxl
 from io import BytesIO
 from django.http import HttpResponse
 from django.core.files.base import ContentFile
-from .models import File, Department, Teacher, Student, DashboardStats, NewAdmission, Examination_management, Fee, PaymentHistory, Bus, BusStop, BusStopStudent, Event, Award, AwardCertificate, CampusFeature, Activity, Gallery, GalleryImage
+from .models import (
+    File, Department, Teacher, Student, DashboardStats, NewAdmission,
+    Examination_management, Fee, PaymentHistory, Bus, BusStop, BusStopStudent,
+    Driver,
+    Event, Award, AwardCertificate, CampusFeature, Activity, Gallery, GalleryImage,
+    PushNotificationLog,
+)
 from super_admin.models import School
+from main_login.models import User, Role
 from .serializers import (
     FileSerializer,
     DepartmentSerializer,
@@ -32,7 +39,8 @@ from .serializers import (
     CampusFeatureSerializer,
     ActivitySerializer,
     GallerySerializer,
-    GalleryImageSerializer
+    GalleryImageSerializer,
+    PushNotificationLogSerializer,
 )
 
 # Import Timetable model and serializer from teacher app
@@ -1224,6 +1232,72 @@ class FeeViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
             )
 
 
+def sync_driver_credentials_for_bus(bus):
+    """
+    When a bus has driver_email set: create or get User with driver role (role_id 6) and a temporary
+    6-digit PIN (password_hash). Driver logs in with email + PIN, then can create a new password via
+    create-password endpoint. When driver_email is blank: unlink any driver assigned to this bus.
+
+    Returns the generated temporary password (6-digit PIN) when a new driver user was created,
+    else None. Caller can include it in the API response so management can share it with the driver.
+    """
+    try:
+        # Driver must be role_id 6 (6th role). Only use the role with pk=6; never use 7 or other ids.
+        driver_role = Role.objects.filter(pk=6).first()
+        if not driver_role:
+            # Fallback: get by name but only use if it is actually id 6 (avoid saving role_id 7)
+            by_name = Role.objects.filter(name='driver').first()
+            if by_name and by_name.pk == 6:
+                driver_role = by_name
+        if not driver_role:
+            return None
+    except Exception:
+        return None
+
+    if bus.driver_email:
+        email = bus.driver_email.strip().lower()
+        if not email:
+            return None
+        # Get school_id from bus so driver user is scoped to this school (each school has its own buses)
+        school_id = getattr(bus, 'school_id', None) or (bus.school.school_id if getattr(bus, 'school', None) else None)
+        user = User.objects.filter(email=email).first()
+        initial_password = None
+        if user is None:
+            # New driver: create user in users table with role_id 6, school_id from bus, and temporary 6-digit PIN
+            pin = str(random.randint(100000, 999999))
+            user = User.objects.create_user(
+                email=email,
+                username=email,
+                password=pin,
+                first_name=bus.driver_name or 'Driver',
+                last_name='',
+                role=driver_role,
+                is_active=True,
+                school_id=school_id,
+            )
+            # create_user sets password_hash and set_password(pin); has_custom_password=False so
+            # driver can create new password after first login via create-password endpoint
+            initial_password = pin
+        else:
+            user.role = driver_role
+            if school_id is not None:
+                user.school_id = school_id
+            update_fields = ['role', 'updated_at']
+            if school_id is not None:
+                update_fields.append('school_id')
+            user.save(update_fields=update_fields)
+        driver_profile, _ = Driver.objects.get_or_create(
+            user=user,
+            defaults={'bus': bus}
+        )
+        driver_profile.bus = bus
+        driver_profile.save(update_fields=['bus', 'updated_at'])
+        return initial_password
+    else:
+        Driver.objects.filter(bus=bus).update(bus=None)
+        return None
+
+
 class BusViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
     """ViewSet for Bus management"""
     queryset = Bus.objects.all()
@@ -1232,7 +1306,7 @@ class BusViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
     lookup_field = 'bus_number'  # Use bus_number as primary key for lookups
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['school', 'bus_type', 'is_active']
-    search_fields = ['bus_number', 'driver_name', 'route_name', 'registration_number']
+    search_fields = ['bus_number', 'driver_name', 'driver_email', 'route_name', 'registration_number']
     ordering_fields = ['bus_number', 'created_at']
     ordering = ['-created_at']
     
@@ -1287,7 +1361,27 @@ class BusViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
                 )
         
         # Call parent create method
-        return super().create(request, *args, **kwargs)
+        response = super().create(request, *args, **kwargs)
+        # Include temporary driver password when a new driver user was created (share with driver to login)
+        if getattr(self, '_driver_initial_password', None) is not None:
+            response.data['driver_initial_password'] = self._driver_initial_password
+            self._driver_initial_password = None
+        return response
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        self._driver_initial_password = sync_driver_credentials_for_bus(serializer.instance)
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        self._driver_initial_password = sync_driver_credentials_for_bus(serializer.instance)
+
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+        if getattr(self, '_driver_initial_password', None) is not None:
+            response.data['driver_initial_password'] = self._driver_initial_password
+            self._driver_initial_password = None
+        return response
 
 
 class BusStopViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
@@ -1606,10 +1700,10 @@ class EventViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
     serializer_class = EventSerializer
     permission_classes = [IsAuthenticated, IsManagementAdmin | (IsFinancial & IsReadOnly)]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'status', 'date']
+    filterset_fields = ['category', 'status', 'start_datetime']
     search_fields = ['name', 'location', 'organizer', 'description']
-    ordering_fields = ['date', 'created_at', 'name']
-    ordering = ['-date', '-created_at']
+    ordering_fields = ['start_datetime', 'created_at', 'name']
+    ordering = ['-start_datetime', '-created_at']
     
     def get_permissions(self):
         """Allow read/create/update/delete without auth for development - can be adjusted"""
@@ -2359,6 +2453,16 @@ class GalleryViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
                     )
 
 
+class PushNotificationLogViewSet(SchoolFilterMixin, viewsets.ReadOnlyModelViewSet):
+    """Read-only list of sent push notifications for the current school."""
+    queryset = PushNotificationLog.objects.select_related('created_by').all()
+    serializer_class = PushNotificationLogSerializer
+    permission_classes = [IsAuthenticated, IsManagementAdmin]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['created_at']
+    ordering = ['-created_at']
+
+
 class BusStopStudentViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
     """ViewSet for Bus Stop Student assignments"""
     queryset = BusStopStudent.objects.select_related('bus_stop', 'student').all()
@@ -2395,3 +2499,115 @@ class BusStopStudentViewSet(SchoolFilterMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(school_id=school_id)
         
         return queryset
+
+
+# -------------------------
+# FCM Push: send from management to students/teachers
+# -------------------------
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsManagementAdmin])
+def send_push_notification(request):
+    """
+    Send FCM push notification to students and/or teachers in the management user's school.
+    Body: { "audience": "all_students" | "all_teachers" | "both", "title": "...", "body": "...", "data": {} }
+    Optional: "school_id" to target a specific school (super_admin only).
+    """
+    from main_login.models import FCMDevice
+    from main_login.fcm import send_fcm_to_tokens
+    from main_login.utils import get_user_school_id
+
+    raw_audience = (request.data.get('audience') or 'both')
+    audience = str(raw_audience).strip().lower()
+    if audience not in ('all_students', 'all_teachers', 'both'):
+        return Response(
+            {'error': 'audience must be one of: all_students, all_teachers, both'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    title = (request.data.get('title') or '').strip()
+    body = (request.data.get('body') or request.data.get('message') or '').strip()
+    data = request.data.get('data') or {}
+    school_id = (request.data.get('school_id') or '').strip()
+
+    if not title and not body:
+        return Response(
+            {'error': 'At least one of title or body is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    if not school_id:
+        school_id = get_user_school_id(request.user)
+    if not school_id:
+        return Response(
+            {'error': 'school_id could not be determined. Specify school_id or use a management user with a school.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Resolve user IDs: students (and their parents) and/or teachers who can receive FCM (have or can have tokens)
+    # - Students: include Student.user_id (if student has login) AND Parent.user_id for parents with students in this school
+    # - Teachers: include Teacher.user_id (teachers with login)
+    user_ids = set()
+    if audience in ('all_students', 'both'):
+        student_user_ids = Student.objects.filter(
+            school__school_id=school_id
+        ).exclude(user_id__isnull=True).values_list('user_id', flat=True)
+        user_ids.update(student_user_ids)
+        from student_parent.models import Parent
+        parent_user_ids = Parent.objects.filter(
+            students__school__school_id=school_id
+        ).values_list('user_id', flat=True).distinct()
+        user_ids.update(parent_user_ids)
+    if audience in ('all_teachers', 'both'):
+        teacher_user_ids = Teacher.objects.filter(
+            school_id=school_id
+        ).exclude(user_id__isnull=True).values_list('user_id', flat=True)
+        user_ids.update(teacher_user_ids)
+    user_ids = {uid for uid in user_ids if uid is not None}
+
+    if not user_ids:
+        PushNotificationLog.objects.create(
+            title=title or '(No title)',
+            body=body or '',
+            audience=audience,
+            sent_count=0,
+            user_count=0,
+            school_id=school_id,
+            created_by=request.user,
+        )
+        return Response(
+            {'message': 'No users found for the selected audience and school.', 'sent_count': 0},
+            status=status.HTTP_200_OK
+        )
+
+    tokens = list(
+        FCMDevice.objects.filter(user_id__in=user_ids).values_list('token', flat=True).distinct()
+    )
+    if not tokens:
+        PushNotificationLog.objects.create(
+            title=title or '(No title)',
+            body=body or '',
+            audience=audience,
+            sent_count=0,
+            user_count=len(user_ids),
+            school_id=school_id,
+            created_by=request.user,
+        )
+        return Response(
+            {'message': 'No FCM devices registered for the selected audience.', 'sent_count': 0},
+            status=status.HTTP_200_OK
+        )
+
+    send_fcm_to_tokens(tokens, title, body, data=data)
+    PushNotificationLog.objects.create(
+        title=title or '(No title)',
+        body=body or '',
+        audience=audience,
+        sent_count=len(tokens),
+        user_count=len(user_ids),
+        school_id=school_id,
+        created_by=request.user,
+    )
+    return Response(
+        {'message': 'Push notification sent.', 'sent_count': len(tokens), 'user_count': len(user_ids)},
+        status=status.HTTP_200_OK
+    )

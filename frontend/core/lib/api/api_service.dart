@@ -352,6 +352,42 @@ class ApiService {
     }
   }
 
+  /// Send FCM push notification to students and/or teachers (management only).
+  /// [audience]: 'all_students' | 'all_teachers' | 'both'
+  /// [title]: notification title, [body]: notification body
+  Future<ApiResponse> sendPushNotification({
+    required String title,
+    required String body,
+    String audience = 'both',
+    String? schoolId,
+  }) async {
+    final bodyMap = <String, dynamic>{
+      'title': title,
+      'body': body,
+      'audience': audience,
+    };
+    if (schoolId != null && schoolId.isNotEmpty) {
+      bodyMap['school_id'] = schoolId;
+    }
+    return post(Endpoints.sendPush, body: bodyMap);
+  }
+
+  /// Fetch list of sent push notifications (management only).
+  /// Returns list of { id, title, body, audience, sent_count, user_count, school_id, created_at }.
+  Future<ApiResponse> getPushNotificationLogs() async {
+    final response = await get(Endpoints.pushNotificationLogs);
+    if (!response.success) return response;
+    // DRF may return paginated { results: [...] } or a list
+    final data = response.data;
+    if (data is List) {
+      return ApiResponse.success(data: data, statusCode: response.statusCode);
+    }
+    if (data is Map<String, dynamic> && data['results'] != null) {
+      return ApiResponse.success(data: data['results'] as List, statusCode: response.statusCode);
+    }
+    return ApiResponse.success(data: <dynamic>[], statusCode: response.statusCode);
+  }
+
   // Handle HTTP response
   ApiResponse _handleResponse(http.Response response) {
     try {

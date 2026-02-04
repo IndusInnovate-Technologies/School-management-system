@@ -1,0 +1,2 @@
+# Do not commit Firebase service account JSON (contains private keys).
+*.json

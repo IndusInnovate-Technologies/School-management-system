@@ -9,7 +9,7 @@ class ApiService {
   static const baseUrl = 'http://localhost:8000/api';
   static String get wsBaseUrl => baseUrl.replaceFirst('http', 'ws').replaceFirst('/api', '');
   
-  /// Fetch bus details for a student by student ID
+  /// Fetch bus details for a student by student ID (legacy endpoint if exists)
   static Future<Map<String, dynamic>?> fetchStudentBusDetails(String studentId) async {
     final headers = await _getAuthHeaders();
     final resp = await http.get(
@@ -20,6 +20,64 @@ class ApiService {
       return jsonDecode(resp.body) as Map<String, dynamic>;
     }
     return null;
+  }
+
+  /// Fetch bus details for dashboard/stat card: uses bus-stop-students, returns map for _BusDetailsCard or {} if no bus assigned
+  static Future<Map<String, dynamic>> fetchBusDetailsForDashboard(String? studentId) async {
+    if (studentId == null || studentId.isEmpty) return {};
+    final headers = await _getAuthHeaders();
+    final resp = await http.get(
+      Uri.parse('$baseUrl/management-admin/bus-stop-students/?search=${Uri.encodeComponent(studentId)}'),
+      headers: headers,
+    );
+    if (resp.statusCode != 200) return {};
+    dynamic data;
+    try {
+      data = jsonDecode(resp.body);
+    } catch (_) {
+      return {};
+    }
+    List<dynamic> results = [];
+    if (data is List) {
+      results = data;
+    } else if (data is Map && data['results'] != null) {
+      results = data['results'] as List<dynamic>;
+    }
+    if (results.isEmpty) return {};
+    // Filter by this student
+    final filtered = results.where((a) {
+      final m = a is Map ? a as Map<String, dynamic> : null;
+      if (m == null) return false;
+      final sid = m['student_id_string']?.toString() ?? m['student_id']?.toString();
+      final nested = m['student'];
+      String? nestedSid;
+      if (nested is Map) {
+        nestedSid = nested['student_id']?.toString() ?? nested['id']?.toString();
+      } else if (nested is String) nestedSid = nested;
+      return sid == studentId || nestedSid == studentId;
+    }).toList();
+    if (filtered.isEmpty) return {};
+    // Prefer a morning assignment so pickup_time = morning stop, dropoff_time = afternoon stop
+    Map<String, dynamic> chosen = filtered.first as Map<String, dynamic>;
+    for (final a in filtered) {
+      final m = a as Map<String, dynamic>;
+      final routeType = (m['stop_details'] as Map<String, dynamic>?)?['route_type']?.toString();
+      if (routeType == 'morning') {
+        chosen = m;
+        break;
+      }
+    }
+    final busDetails = chosen['bus_details'] as Map<String, dynamic>?;
+    if (busDetails == null) return {};
+    final pickupTime = chosen['pickup_time']?.toString();
+    final dropoffTime = chosen['dropoff_time']?.toString();
+    return {
+      'busNumber': busDetails['bus_number']?.toString() ?? 'N/A',
+      'route': busDetails['route']?.toString() ?? 'N/A',
+      'driver': busDetails['driver_name']?.toString() ?? 'N/A',
+      'pickupTime': pickupTime != null && pickupTime.isNotEmpty ? pickupTime.split('.').first : 'N/A',
+      'dropTime': dropoffTime != null && dropoffTime.isNotEmpty ? dropoffTime.split('.').first : 'N/A',
+    };
   }
 
   static const _base = '$baseUrl/management-admin';
@@ -94,6 +152,77 @@ class ApiService {
     return await _getAuthHeaders();
   }
 
+  /// Register FCM token for push notifications (call after login)
+  static Future<bool> registerFcmToken(String token, String platform) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final uri = Uri.parse('$baseUrl/auth/fcm/register/');
+      final resp = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode({'token': token, 'platform': platform}),
+      ).timeout(const Duration(seconds: 15));
+      return resp.statusCode == 200;
+    } catch (e) {
+      print('Error registering FCM token: $e');
+      return false;
+    }
+  }
+
+  /// Unregister FCM token (e.g. on logout)
+  static Future<bool> unregisterFcmToken(String token) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final uri = Uri.parse('$baseUrl/auth/fcm/unregister/');
+      final resp = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode({'token': token}),
+      ).timeout(const Duration(seconds: 10));
+      return resp.statusCode == 200;
+    } catch (e) {
+      print('Error unregistering FCM token: $e');
+      return false;
+    }
+  }
+
+  /// Fetch my push notifications (for student/parent portal) - returns list and unread count
+  static Future<Map<String, dynamic>> getMyPushNotifications() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.get(
+        Uri.parse('$baseUrl/auth/my-push-notifications/'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 15));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return {
+          'notifications': data['notifications'] is List ? List<Map<String, dynamic>>.from(data['notifications'] as List) : <Map<String, dynamic>>[],
+          'unread_count': data['unread_count'] is int ? data['unread_count'] as int : 0,
+        };
+      }
+    } catch (e) {
+      print('Error fetching my push notifications: $e');
+    }
+    return {'notifications': <Map<String, dynamic>>[], 'unread_count': 0};
+  }
+
+  /// Mark my push notifications as read (resets unread count)
+  static Future<bool> markMyPushNotificationsRead() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.post(
+        Uri.parse('$baseUrl/auth/my-push-notifications/mark-read/'),
+        headers: headers,
+        body: jsonEncode({}),
+      ).timeout(const Duration(seconds: 10));
+      return resp.statusCode == 200;
+    } catch (e) {
+      print('Error marking push notifications read: $e');
+      return false;
+    }
+  }
+
   /// Fetch chat messages between two users using ChatMessage API (new WhatsApp/Telegram-like chat)
   /// Uses the new ChatMessage model endpoint for real-time chat history
   static Future<List<Map<String, dynamic>>> fetchChatMessages(String senderUsername, String recipientUsername, {String? otherUserId, String? groupId}) async {
@@ -159,14 +288,13 @@ class ApiService {
     }
   }
 
-  /// Mark all messages in a group as read
+  /// Mark all messages in a group as read (WhatsApp-like: opening chat clears unread)
   static Future<bool> markGroupRead(String groupId) async {
     try {
       final headers = await _getAuthHeaders();
       final resp = await http.post(
-        Uri.parse('${chatMessagesEndpoint}mark_conversation_read/'),
+        Uri.parse('$baseUrl/student-parent/chat-groups/$groupId/mark_read/'),
         headers: headers,
-        body: jsonEncode({'group_id': groupId}),
       ).timeout(const Duration(seconds: 30));
       
       if (resp.statusCode == 200) {
@@ -385,14 +513,12 @@ class ApiService {
     }
   }
 
-  /// Get detailed group members
+  /// Get detailed group members (with Class/Section, Subject, is_creator)
   static Future<Map<String, dynamic>> getGroupMembers(String groupId) async {
     try {
       final headers = await _getAuthHeaders();
       final uri = Uri.parse('http://localhost:8000/api/student-parent/chat-groups/$groupId/get_members/');
-      
       final resp = await http.get(uri, headers: headers).timeout(const Duration(seconds: 30));
-      
       if (resp.statusCode == 200) {
         return jsonDecode(resp.body) as Map<String, dynamic>;
       }
@@ -400,6 +526,62 @@ class ApiService {
     } catch (e) {
       print('Error fetching group members: $e');
       return {};
+    }
+  }
+
+  static Future<bool> updateGroupName(String groupId, String name) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.patch(
+        Uri.parse('http://localhost:8000/api/student-parent/chat-groups/$groupId/'),
+        headers: headers,
+        body: jsonEncode({'name': name}),
+      );
+      return resp.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<bool> removeGroupMember(String groupId, String userId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.post(
+        Uri.parse('http://localhost:8000/api/student-parent/chat-groups/$groupId/remove_members/'),
+        headers: headers,
+        body: jsonEncode({'member_ids': [userId]}),
+      );
+      return resp.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<List<dynamic>> getAddableGroupMembers(String groupId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.get(Uri.parse('http://localhost:8000/api/student-parent/chat-groups/$groupId/list_addable_members/'), headers: headers);
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return data['users'] as List<dynamic>? ?? [];
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<bool> addGroupMembers(String groupId, List<String> userIds) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.post(
+        Uri.parse('http://localhost:8000/api/student-parent/chat-groups/$groupId/add_members/'),
+        headers: headers,
+        body: jsonEncode({'member_ids': userIds}),
+      );
+      return resp.statusCode == 200;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -425,16 +607,40 @@ class ApiService {
       request.headers.addAll(authHeaders);
       
       // Add text fields
-      if (groupId != null) {
+      if (groupId != null && groupId.isNotEmpty) {
         request.fields['group_id'] = groupId;
       } else {
-        request.fields['recipient'] = recipient;
-        if (otherUserId != null) {
+        // For 1-to-1 messages, recipient or recipient_id is required
+        if (recipient.isNotEmpty) {
+          request.fields['recipient'] = recipient;
+        }
+        if (otherUserId != null && otherUserId.isNotEmpty) {
           request.fields['recipient_id'] = otherUserId;
         }
       }
       
-      if (messageText != null) request.fields['message_text'] = messageText;
+      request.fields['message_text'] = messageText ?? ''; // Always send (empty for attachment-only)
+      
+      // Only set message_type to image/file/video if a file is actually attached
+      // If no file is attached, force message_type to 'text'
+      if (fileBytes != null || (filePath != null && filePath.isNotEmpty)) {
+        // Auto-detect type from filename if available
+        if (fileName != null) {
+          final ext = fileName.toLowerCase().split('.').last;
+          if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(ext)) {
+            messageType = 'image';
+          } else if (['mp4', 'avi', 'mov', 'mkv'].contains(ext)) {
+            messageType = 'video';
+          } else {
+            messageType = 'file';
+          }
+        } else {
+          messageType = 'file';
+        }
+      } else {
+        // No file attached, must be text message
+        messageType = 'text';
+      }
       request.fields['message_type'] = messageType;
       
       if (repliedTo != null) {
@@ -444,21 +650,48 @@ class ApiService {
       // Platform-specific file handling
       if (fileBytes != null && fileName != null) {
         // Web platform: use bytes
-        request.files.add(http.MultipartFile.fromBytes(
-          'attachment',
-          fileBytes,
-          filename: fileName,
-        ));
-      } else if (filePath != null) {
+        try {
+          request.files.add(http.MultipartFile.fromBytes(
+            'attachment',
+            fileBytes,
+            filename: fileName,
+          ));
+          print('Added attachment from bytes: $fileName (${fileBytes.length} bytes)');
+        } catch (e) {
+          print('Error adding file from bytes: $e');
+          return null;
+        }
+      } else if (filePath != null && filePath.isNotEmpty) {
         // Mobile/Desktop platform: use file path
-        request.files.add(await http.MultipartFile.fromPath('attachment', filePath));
+        try {
+          final file = await http.MultipartFile.fromPath('attachment', filePath);
+          request.files.add(file);
+          print('Added attachment from path: $filePath');
+        } catch (e) {
+          print('Error adding file from path: $e');
+          return null;
+        }
       }
+      
+      // Debug: Log request details
+      print('Sending message with ${request.files.length} file(s)');
+      print('Message type: $messageType');
+      print('Message text: ${messageText ?? "(empty)"}');
+      print('Recipient: $recipient');
+      print('Group ID: $groupId');
+      print('Other User ID: $otherUserId');
       
       final streamedResponse = await request.send().timeout(const Duration(seconds: 60));
       final resp = await http.Response.fromStream(streamedResponse);
       
       if (resp.statusCode == 201 || resp.statusCode == 200) {
         return jsonDecode(resp.body) as Map<String, dynamic>;
+      } else {
+        // Log error for debugging
+        print('Failed to send message with attachment: ${resp.statusCode}');
+        print('Response body: ${resp.body}');
+        print('Request fields: ${request.fields}');
+        print('Request files count: ${request.files.length}');
       }
       return null;
     } catch (e) {

@@ -5,7 +5,7 @@ from django.contrib import admin
 from .models import (
     Department, Teacher, Student, DashboardStats, NewAdmission, 
     Examination_management, Fee, Award, AwardCertificate, 
-    Activity, Event, Gallery, GalleryImage
+    Activity, Event, Gallery, GalleryImage, Driver
 )
 
 
@@ -102,3 +102,12 @@ class GalleryAdmin(admin.ModelAdmin):
         extra = 0
     
     inlines = [GalleryImageInline]
+
+
+@admin.register(Driver)
+class DriverAdmin(admin.ModelAdmin):
+    list_display = ['user', 'bus', 'employee_id', 'created_at']
+    list_filter = ['bus']
+    search_fields = ['user__email', 'user__username', 'employee_id']
+    raw_id_fields = ['user', 'bus']
+    readonly_fields = ['created_at', 'updated_at']

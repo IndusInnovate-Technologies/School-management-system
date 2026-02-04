@@ -56,7 +56,10 @@ class _BusDetailsPageState extends State<BusDetailsPage>
   Map<String, dynamic>? _busData;
   List<Map<String, dynamic>> _morningStops = [];
   List<Map<String, dynamic>> _afternoonStops = [];
-  List<Map<String, dynamic>> _deviationLog = [];
+  // Weekly bus attendance: list of { date, status }
+  DateTime _attendanceWeekStart = DateTime.now();
+  List<Map<String, dynamic>> _busAttendanceWeek = [];
+  String? _currentStudentId; // resolved when loading bus details (used for attendance)
 
   Map<String, dynamic>? get firstMorningStop =>
       _morningStops.isNotEmpty ? _morningStops.first : null;
@@ -65,6 +68,7 @@ class _BusDetailsPageState extends State<BusDetailsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadBusDetails());
   }
 
   @override
@@ -103,11 +107,14 @@ class _BusDetailsPageState extends State<BusDetailsPage>
       
       debugPrint('Loading bus details for student: $targetStudentId');
 
-      // Get current student's bus assignments - filter by student ID string
-      final response = await _apiService.get('${Endpoints.busStopStudents}?search=$targetStudentId');
-      
+      // Use student-parent bus-details endpoint (returns data for this student when assigned to a bus)
+      final response = await _apiService.get(
+        Endpoints.studentParentBusDetails,
+        queryParameters: targetStudentId.isNotEmpty ? {'student_id': targetStudentId} : null,
+      );
+
       if (response.success && response.data != null) {
-        // Handle paginated response
+        // Handle response: { results: [...] }
         List assignments;
         if (response.data is Map) {
           final dataMap = response.data as Map<String, dynamic>;
@@ -117,29 +124,26 @@ class _BusDetailsPageState extends State<BusDetailsPage>
         } else {
           throw Exception('Unexpected response format');
         }
-        
-        // Filter assignments strictly to match this student name/ID
-        // search parameter is good, but let's double check the results
+
+        // Results are already filtered by student on the backend; optionally match by id
         final filteredAssignments = assignments.where((a) {
           final assignment = a as Map<String, dynamic>;
-          final sid = assignment['student_id_string']?.toString() ?? 
-                     assignment['student_id']?.toString();
-          
+          final sid = assignment['student_id_string']?.toString() ??
+              assignment['student_id']?.toString();
           String? nestedSid;
           if (assignment['student'] is Map) {
-            nestedSid = assignment['student']['student_id']?.toString() ?? 
-                      assignment['student']['id']?.toString();
+            nestedSid = assignment['student']['student_id']?.toString() ??
+                assignment['student']['id']?.toString();
           } else if (assignment['student'] is String) {
             nestedSid = assignment['student'];
           }
-          
           return sid == targetStudentId || nestedSid == targetStudentId;
         }).toList();
 
         if (filteredAssignments.isEmpty) {
           setState(() {
             _isLoading = false;
-            _errorMessage = 'No bus assigned to you yet. Please contact the school office.';
+            _errorMessage = 'Bus is not added [Not assigned].';
           });
           return;
         }
@@ -151,7 +155,7 @@ class _BusDetailsPageState extends State<BusDetailsPage>
         if (busDetails == null) {
           setState(() {
             _isLoading = false;
-            _errorMessage = 'Bus details not available. Please contact the school office.';
+            _errorMessage = 'Bus is not added [Not assigned].';
           });
           return;
         }
@@ -183,8 +187,10 @@ class _BusDetailsPageState extends State<BusDetailsPage>
           _busData = busDetails;
           _morningStops = morningStops;
           _afternoonStops = afternoonStops;
+          _currentStudentId = targetStudentId;
           _isLoading = false;
         });
+        _loadBusAttendanceWeek();
         
       } else {
         setState(() {
@@ -198,6 +204,51 @@ class _BusDetailsPageState extends State<BusDetailsPage>
         _errorMessage = 'Error loading bus details: ${e.toString()}';
       });
     }
+  }
+
+  /// Monday of the week for [date].
+  static DateTime _mondayOfWeek(DateTime date) {
+    final d = DateTime(date.year, date.month, date.day);
+    return d.subtract(Duration(days: d.weekday - 1));
+  }
+
+  Future<void> _loadBusAttendanceWeek() async {
+    final studentId = _currentStudentId ?? widget.studentId;
+    if (studentId == null || studentId.isEmpty) return;
+    final monday = _mondayOfWeek(_attendanceWeekStart);
+    final weekStartStr = '${monday.year}-${monday.month.toString().padLeft(2, '0')}-${monday.day.toString().padLeft(2, '0')}';
+    try {
+      final response = await _apiService.get(
+        Endpoints.studentParentBusAttendance,
+        queryParameters: {
+          'student_id': studentId,
+          'week_start': weekStartStr,
+        },
+      );
+      if (response.success && response.data is Map) {
+        final data = response.data as Map<String, dynamic>;
+        final list = data['attendance'] as List<dynamic>?;
+        setState(() {
+          _busAttendanceWeek = list != null
+              ? list.map((e) => Map<String, dynamic>.from(e as Map)).toList()
+              : [];
+        });
+      }
+    } catch (_) {}
+  }
+
+  void _previousWeek() {
+    setState(() {
+      _attendanceWeekStart = _attendanceWeekStart.subtract(const Duration(days: 7));
+    });
+    _loadBusAttendanceWeek();
+  }
+
+  void _nextWeek() {
+    setState(() {
+      _attendanceWeekStart = _attendanceWeekStart.add(const Duration(days: 7));
+    });
+    _loadBusAttendanceWeek();
   }
 
   // Helper method to format time to 12-hour format
@@ -222,13 +273,14 @@ class _BusDetailsPageState extends State<BusDetailsPage>
     }
   }
 
-  // Helper method to filter stops by type
+  // Helper method to filter stops by type (pickup = morning stops, drop = afternoon stops)
   List<Map<String, String>> _filterStops(String type) {
-    final stops = type == 'morning' ? _morningStops : _afternoonStops;
+    final isPickup = type == 'pickup' || type == 'morning';
+    final stops = isPickup ? _morningStops : _afternoonStops;
     return stops.map((stop) => {
       'name': stop['stop_name']?.toString() ?? 'Unknown',
       'time': _formatTime(stop['stop_time']?.toString()),
-      'type': type,
+      'type': isPickup ? 'pickup' : 'drop',
       'address': stop['address']?.toString() ?? 'No address',
     }).toList();
   }
@@ -268,24 +320,24 @@ class _BusDetailsPageState extends State<BusDetailsPage>
     );
   }
 
-  // ✅ Top Stats Grid
+  // Top Stats Grid (4 cards: Bus Number, Route, Driver, Pickup Time)
   Widget _statsGrid(BuildContext context) {
     List<Map<String, dynamic>> stats = [
       {
         "icon": "🚌",
-        "value": "BUS-001",
+        "value": _busData?['bus_number'] ?? 'N/A',
         "label": "Bus Number",
         "color": Theme.of(context).colorScheme.primary,
       },
       {
         "icon": "🛣️",
-        "value": "Route A",
+        "value": _busData?['route'] ?? 'N/A',
         "label": "Route",
         "color": Theme.of(context).colorScheme.secondary,
       },
       {
         "icon": "👨‍💼",
-        "value": _busData!['driver_name'] ?? 'N/A',
+        "value": _busData?['driver_name'] ?? 'N/A',
         "label": "Driver",
         "color": Colors.orange,
       },
@@ -361,14 +413,6 @@ class _BusDetailsPageState extends State<BusDetailsPage>
 
         _title("🛣️ Route Stops"),
         _buildRouteTabs(context),
-        const SizedBox(height: 25),
-
-        _title("⚠️ Deviation Log"),
-        _buildDeviationLog(context),
-        const SizedBox(height: 25),
-
-        _title("⚡ Quick Actions"),
-        _actionButtons(context),
         const SizedBox(height: 20),
       ],
     );
@@ -388,50 +432,220 @@ class _BusDetailsPageState extends State<BusDetailsPage>
     );
   }
 
-  // 🔄 MODIFIED: Bus Info Box (Now includes Live Tracking)
+  Widget _buildBusAttendanceSection(BuildContext context) {
+    final monday = _mondayOfWeek(_attendanceWeekStart);
+    final sunday = monday.add(const Duration(days: 6));
+    final monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final weekLabel = '${monday.day} ${monthNames[monday.month - 1]} – ${sunday.day} ${monthNames[sunday.month - 1]} ${sunday.year}';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.directions_bus, color: Color(0xFF667eea), size: 22),
+              const SizedBox(width: 8),
+              const Text(
+                'Bus attendance',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xff333333),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left, color: Color(0xFF667eea)),
+                onPressed: _previousWeek,
+                padding: EdgeInsets.zero,
+              ),
+              Text(
+                weekLabel,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Color(0xff333333),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right, color: Color(0xFF667eea)),
+                onPressed: _nextWeek,
+                padding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) {
+              return Expanded(
+                child: Center(
+                  child: Text(
+                    day,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF667eea),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: List.generate(7, (i) {
+              final dayData = i < _busAttendanceWeek.length
+                  ? _busAttendanceWeek[i] as Map<String, dynamic>?
+                  : null;
+              final dateStr = dayData?['date']?.toString();
+              final status = dayData?['status']?.toString();
+              DateTime? date;
+              if (dateStr != null) {
+                try {
+                  date = DateTime.parse(dateStr);
+                } catch (_) {}
+              }
+              final isPresent = status == 'present';
+              final isAbsent = status == 'absent';
+              final now = DateTime.now();
+              final isToday = date != null &&
+                  date.year == now.year &&
+                  date.month == now.month &&
+                  date.day == now.day;
+
+              Color bgColor = Colors.grey.shade100;
+              Color textColor = Colors.black87;
+              // When no attendance: show hyphen (—) in the cell; when present/absent show P/A
+              String label = '—';
+              if (isPresent) {
+                bgColor = const Color(0xFF4CAF50).withValues(alpha: 0.9);
+                textColor = Colors.white;
+                label = 'P';
+              } else if (isAbsent) {
+                bgColor = const Color(0xFFEF5350).withValues(alpha: 0.9);
+                textColor = Colors.white;
+                label = 'A';
+              }
+
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(right: i < 6 ? 4 : 0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        date != null ? date.day.toString() : '—',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(6),
+                          border: isToday
+                              ? Border.all(color: const Color(0xFF667eea), width: 2)
+                              : null,
+                        ),
+                        child: Center(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Bus Info Box – uses fetched _busData and first stop times
   Widget _busInfoCard(BuildContext context) {
+    final busNumber = _busData?['bus_number']?.toString() ?? 'N/A';
+    final route = _busData?['route']?.toString() ?? 'N/A';
+    final driverName = _busData?['driver_name']?.toString() ?? 'N/A';
+    final driverContact = _busData?['driver_contact']?.toString() ?? 'N/A';
+    final capacity = _busData?['capacity']?.toString() ?? 'N/A';
+    final status = _busData?['status']?.toString() ?? 'Active';
+    final pickupTime = _formatTime(firstMorningStop?['stop_time']?.toString());
+    final dropTime = _firstDropTime();
+
     Map<String, String> info = {
-      "Route": "Route A",
-      "Driver":
-          "John Smith", // Driver info remains in the static list for clarity
-      "Pickup Time": "7:30 AM",
-      "Drop Time": "3:30 PM",
-      "Contact": "+1-555-0123",
-      "Capacity": "45 Students",
+      "Route": route,
+      "Driver": driverName,
+      "Pickup Time": pickupTime != 'N/A' ? pickupTime : '—',
+      "Drop Time": dropTime,
+      "Contact": driverContact != 'N/A' ? driverContact : '—',
+      "Capacity": capacity != 'N/A' ? '$capacity Students' : '—',
     };
 
     return _box(
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Bus Status (Simplified to reflect general status)
-          const Row(
+          // Row 1: Bus number and status
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
-                  Text("🚌", style: TextStyle(fontSize: 20)),
-                  SizedBox(width: 8),
+                  const Text("🚌", style: TextStyle(fontSize: 20)),
+                  const SizedBox(width: 8),
                   Text(
-                    "BUS-001",
-                    style: TextStyle(
+                    busNumber,
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Color(0xff333333),
                     ),
                   ),
                 ],
               ),
-              // Simplified Live Status Badge
               Row(
                 children: [
-                  Icon(Icons.directions_bus, size: 16, color: Colors.green),
-                  SizedBox(width: 4),
+                  Icon(
+                    Icons.directions_bus,
+                    size: 16,
+                    color: status == 'Active' ? Colors.green : Colors.grey,
+                  ),
+                  const SizedBox(width: 4),
                   Text(
-                    "In Transit",
+                    status == 'Active' ? "In Transit" : status,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
-                      color: Colors.green,
+                      color: status == 'Active' ? Colors.green : Colors.grey,
                     ),
                   ),
                 ],
@@ -440,19 +654,15 @@ class _BusDetailsPageState extends State<BusDetailsPage>
           ),
           const Divider(height: 20),
 
-          // Row 2: Live Status & ETA
+          // Row 2: First morning stop and pickup time from API
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "📍 Next Stop: Central Park Stop",
-                style: TextStyle(color: Colors.grey[700], fontSize: 14),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                "⏳ ETA to Destination: 15 minutes",
-                style: TextStyle(color: Colors.grey[700], fontSize: 14),
-              ),
+              if (firstMorningStop != null)
+                Text(
+                  "📍 Next Stop: ${firstMorningStop!['stop_name'] ?? '—'}",
+                  style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                ),
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
@@ -463,7 +673,9 @@ class _BusDetailsPageState extends State<BusDetailsPage>
                 ),
                 child: Center(
                   child: Text(
-                    "Estimated Arrival: 7:45 AM",
+                    pickupTime != 'N/A'
+                        ? "Estimated Pickup: $pickupTime"
+                        : "Pickup time as per route",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
@@ -476,7 +688,7 @@ class _BusDetailsPageState extends State<BusDetailsPage>
           ),
           const Divider(height: 20),
 
-          // Row 3: Static Details Grid
+          // Row 3: Details from API
           Column(
             children: info.entries.map((e) {
               return Padding(
@@ -503,6 +715,14 @@ class _BusDetailsPageState extends State<BusDetailsPage>
         ],
       ),
     );
+  }
+
+  String _firstDropTime() {
+    if (_afternoonStops.isNotEmpty) {
+      final t = _afternoonStops.first['stop_time']?.toString();
+      return _formatTime(t);
+    }
+    return '—';
   }
 
   // Tabbed Route View Container
@@ -545,8 +765,8 @@ class _BusDetailsPageState extends State<BusDetailsPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _routeListContent(_filterStops('pickup'), true),
-                _routeListContent(_filterStops('drop'), false),
+                _routeListContent(_filterStops('morning'), true),
+                _routeListContent(_filterStops('afternoon'), false),
               ],
             ),
           ),
@@ -630,118 +850,7 @@ class _BusDetailsPageState extends State<BusDetailsPage>
     );
   }
 
-  // 🆕 NEW FEATURE: Deviation Log List Builder
-  Widget _buildDeviationLog(BuildContext context) {
-    return _box(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: _deviationLog.map((log) {
-          final isDeviation = log['delay'] != '0 min';
-          final icon = isDeviation ? Icons.warning : Icons.check_circle;
-          final color = isDeviation ? Colors.red : Colors.green;
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, size: 20, color: color),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "${log['time']} - ${isDeviation ? 'Deviation' : 'On Schedule'}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        log['reason']!,
-                        style: const TextStyle(
-                          color: Color(0xFF666666),
-                          fontSize: 13,
-                        ),
-                      ),
-                      if (isDeviation)
-                        Text(
-                          "Delay: ${log['delay']}",
-                          style: TextStyle(
-                            color: Colors.red.shade700,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  // ✅ Button List (Includes Emergency Alert)
-  Widget _actionButtons(BuildContext context) {
-    List<Map<String, dynamic>> actions = [
-      {
-        "text": "📍 Track Bus Live",
-        "icon": Icons.location_on,
-        "color": Theme.of(context).colorScheme.primary,
-        "onTap": () => _msg(context, "Tracking bus..."),
-      },
-      {
-        "text": "📞 Contact Driver",
-        "icon": Icons.phone,
-        "color": Theme.of(context).colorScheme.secondary,
-        "onTap": () => _msg(context, "Calling driver..."),
-      },
-      {
-        "text": "⚠️ Report Issue",
-        "icon": Icons.warning,
-        "color": Colors.orange,
-        "onTap": () => _msg(context, "Reporting issue..."),
-      },
-      // Red button now links to Full Schedule View
-      {
-        "text": "📅 View Full Schedule",
-        "icon": Icons.schedule,
-        "color": Colors.red,
-        "onTap": () => _msg(context, "Opening Full Schedule..."),
-      },
-    ];
-
-    return Column(
-      children: actions.map((a) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: a["color"] as Color,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              elevation: 3,
-            ),
-            onPressed: a["onTap"] as VoidCallback,
-            icon: Icon(a["icon"] as IconData, size: 20),
-            label: Text(
-              a["text"] as String,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  // 🆕 NEW FEATURE: Stop Details Modal
+  // Stop Details Modal
   void _showStopDetailsModal(BuildContext context, Map<String, String> stop) {
     final bool isPickup = stop['type'] == 'pickup';
     final Color accentColor = isPickup
@@ -855,17 +964,41 @@ class _BusDetailsPageState extends State<BusDetailsPage>
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: _buildAppBar(context),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _statsGrid(context),
-            const SizedBox(height: 20),
-            _content(context),
-          ],
-        ),
-      ),
+      body: _errorMessage != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.directions_bus_outlined, size: 64, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _statsGrid(context),
+                  const SizedBox(height: 20),
+                  _buildBusAttendanceSection(context),
+                  const SizedBox(height: 25),
+                  _content(context),
+                ],
+              ),
+            ),
     );
   }
 }

@@ -81,6 +81,19 @@ class Command(BaseCommand):
                     }
                 ]
             },
+            {
+                'role_name': 'driver',
+                'role_display': 'Driver',
+                'users': [
+                    {
+                        'username': 'driver',
+                        'email': 'driver@school.com',
+                        'password': 'driver123',
+                        'first_name': 'John',
+                        'last_name': 'Driver',
+                    }
+                ]
+            },
         ]
 
         created_count = 0
@@ -111,16 +124,18 @@ class Command(BaseCommand):
                 email = user_data['email']
                 
                 # Check if user already exists
+                defaults = {
+                    'username': username,
+                    'first_name': user_data['first_name'],
+                    'last_name': user_data['last_name'],
+                    'role': role,
+                    'is_active': True,
+                }
+                if hasattr(User, 'is_verified'):
+                    defaults['is_verified'] = True
                 user, user_created = User.objects.get_or_create(
                     email=email,
-                    defaults={
-                        'username': username,
-                        'first_name': user_data['first_name'],
-                        'last_name': user_data['last_name'],
-                        'role': role,
-                        'is_active': True,
-                        'is_verified': True,
-                    }
+                    defaults=defaults
                 )
                 
                 if user_created:
@@ -169,4 +184,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Parent Login:'))
         self.stdout.write(self.style.SUCCESS('  Email: parent@school.com'))
         self.stdout.write(self.style.SUCCESS('  Password: parent123\n'))
+        self.stdout.write(self.style.SUCCESS('Driver Login:'))
+        self.stdout.write(self.style.SUCCESS('  Email: driver@school.com'))
+        self.stdout.write(self.style.SUCCESS('  Password: driver123\n'))
 

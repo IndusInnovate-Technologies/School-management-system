@@ -3,7 +3,8 @@ Serializers for management_admin app
 """
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from .models import File, Department, Teacher, Student, DashboardStats, NewAdmission, Examination_management, Fee, PaymentHistory, Bus, BusStop, BusStopStudent, Event, Award, AwardCertificate, CampusFeature, Activity, Gallery, GalleryImage
+from django.utils import timezone
+from .models import File, Department, Teacher, Student, DashboardStats, NewAdmission, Examination_management, Fee, PaymentHistory, Bus, BusStop, BusStopStudent, BusStopAttendance, Event, Award, AwardCertificate, CampusFeature, Activity, Gallery, GalleryImage, PushNotificationLog
 
 from main_login.serializers import UserSerializer
 from main_login.serializer_mixins import SchoolIdMixin
@@ -694,7 +695,7 @@ class BusSerializer(SchoolIdMixin, serializers.ModelSerializer):
                     'student_id_string': student_link.student_id_string or '',
                     'student_name': student_link.student_name or '',
                     'student_class': student_link.student_class or '',
-                    'student_grade': student_link.student_grade or '',
+                    'student_section': student_link.student_section or '',
                     'pickup_time': student_link.pickup_time.strftime('%H:%M:%S') if student_link.pickup_time else None,
                     'dropoff_time': student_link.dropoff_time.strftime('%H:%M:%S') if student_link.dropoff_time else None,
                     'bus_stop_name': stop.stop_name,
@@ -910,6 +911,17 @@ class GallerySerializer(serializers.ModelSerializer):
         return instance
 
 
+class PushNotificationLogSerializer(serializers.ModelSerializer):
+    """Serializer for PushNotificationLog (read-only list of sent push notifications)."""
+    class Meta:
+        model = PushNotificationLog
+        fields = [
+            'id', 'title', 'body', 'audience', 'sent_count', 'user_count',
+            'school_id', 'created_by', 'created_at'
+        ]
+        read_only_fields = fields
+
+
 class BusStopStudentSerializer(serializers.ModelSerializer):
     """Serializer for BusStopStudent model - handles student assignment to bus stops"""
     student_id = serializers.CharField(write_only=True, required=True, help_text='Student ID string')
@@ -918,21 +930,30 @@ class BusStopStudentSerializer(serializers.ModelSerializer):
     # Add nested details for student/parent portal
     bus_details = serializers.SerializerMethodField()
     stop_details = serializers.SerializerMethodField()
+    attendance_status_today = serializers.SerializerMethodField()
     
     class Meta:
         model = BusStopStudent
         fields = [
             'id', 'bus_stop', 'student', 'student_id', 'stop', 'school_id', 'school_name',
-            'student_id_string', 'student_name', 'student_class', 'student_grade', 'student_section',
+            'student_id_string', 'student_name', 'student_class', 'student_section',
             'pickup_time', 'dropoff_time', 'created_at', 'updated_at',
-            'bus_details', 'stop_details'
+            'bus_details', 'stop_details', 'attendance_status_today'
         ]
         read_only_fields = [
-            'id', 'bus_stop', 'student', 'school_id', 'school_name', 
-            'student_id_string', 'student_name', 'student_class', 'student_grade', 'student_section',
+            'id', 'bus_stop', 'student', 'school_id', 'school_name',
+            'student_id_string', 'student_name', 'student_class', 'student_section',
             'pickup_time', 'dropoff_time', 'created_at', 'updated_at',
-            'bus_details', 'stop_details'
+            'bus_details', 'stop_details', 'attendance_status_today'
         ]
+    
+    def get_attendance_status_today(self, obj):
+        """Today's bus attendance (present/absent) from driver portal."""
+        today = timezone.now().date()
+        att = BusStopAttendance.objects.filter(
+            bus_stop_student=obj, attendance_date=today
+        ).first()
+        return att.status if att else None
     
     def get_bus_details(self, obj):
         """Get bus details from the stop's bus"""

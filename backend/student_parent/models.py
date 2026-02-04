@@ -264,6 +264,7 @@ class ChatMessage(models.Model):
         ('image', 'Image'),
         ('file', 'File'),
         ('video', 'Video'),
+        ('system', 'System'),
     ]
     
     message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -379,6 +380,15 @@ class ChatMessage(models.Model):
         null=True,
         blank=True,
         help_text='Timestamp when the message was deleted'
+    )
+    is_edited = models.BooleanField(
+        default=False,
+        help_text='Flag to indicate if the message has been edited'
+    )
+    edited_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Timestamp when the message was last edited'
     )
     
     # Timestamps

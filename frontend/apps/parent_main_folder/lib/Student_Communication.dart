@@ -12,7 +12,7 @@ import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 
 class StudentCommunicationScreen extends StatefulWidget {
   const StudentCommunicationScreen({super.key});
@@ -677,53 +677,63 @@ class _StudentCommunicationScreenState extends State<StudentCommunicationScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          FilterChip(
-                            label: const Text('Total Messages', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                            selected: !_showGroupsOnly,
-                            onSelected: (v) {
-                              if (v) {
-                                setState(() {
-                                  _showGroupsOnly = false;
-                                });
-                              }
-                            },
-                            selectedColor: const Color(0xFF667eea),
-                            checkmarkColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          Flexible(
+                            child: FilterChip(
+                              label: const Text('All', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                              selected: !_showGroupsOnly,
+                              onSelected: (v) {
+                                if (v) {
+                                  setState(() {
+                                    _showGroupsOnly = false;
+                                  });
+                                }
+                              },
+                              selectedColor: const Color(0xFF667eea),
+                              checkmarkColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            ),
                           ),
-                          const SizedBox(width: 16),
-                          FilterChip(
-                            label: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text('Groups', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                                if (_getGroupUnreadCount() > 0) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: FilterChip(
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
                                     child: Text(
-                                      '${_getGroupUnreadCount()}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      'Groups',
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  if (_getGroupUnreadCount() > 0) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${_getGroupUnreadCount()}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
-                              ],
+                              ),
+                              selected: _showGroupsOnly,
+                              onSelected: (v) => setState(() {
+                                _showGroupsOnly = v;
+                              }),
+                              selectedColor: const Color(0xFF667eea),
+                              checkmarkColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             ),
-                            selected: _showGroupsOnly,
-                            onSelected: (v) => setState(() {
-                              _showGroupsOnly = v;
-                            }),
-                            selectedColor: const Color(0xFF667eea),
-                            checkmarkColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           ),
                         ],
                       ),
@@ -1057,20 +1067,26 @@ class ChatMessage {
   final bool isSent;
   final String timestamp;
   final bool isRead;
+  final bool isEdited;
+  final bool isDeleted;
   final String? attachmentUrl;
   final String? attachmentName;
   final String? repliedToId;
   final String? repliedToSenderName;
   final String? repliedToText; // Added for replies
+  final String? messageType; // Added for system messages
 
   ChatMessage({
     required this.id,
     required this.text,
     required this.senderId,
     this.senderName,
+    this.messageType,
     required this.isSent,
     required this.timestamp,
     this.isRead = false,
+    this.isEdited = false,
+    this.isDeleted = false,
     this.attachmentUrl,
     this.attachmentName,
     this.repliedToId,
@@ -1097,6 +1113,8 @@ class ChatGroup {
   String? repliedToId;
   String? repliedToSenderName;
   String? repliedToText;
+  final bool isEdited;
+  final bool isDeleted;
 
   ChatGroup({
     required this.id,
@@ -1110,12 +1128,14 @@ class ChatGroup {
     this.lastMessageSender,
     this.lastMessageTime,
     this.lastMessageIsRead = false,
-    this.lastMessageIsSent = true,
+    this.lastMessageIsSent = false,
     this.unreadCount = 0,
     this.attachmentName,
     this.repliedToId,
     this.repliedToSenderName,
     this.repliedToText,
+    this.isEdited = false,
+    this.isDeleted = false,
   });
 }
 
@@ -1151,15 +1171,13 @@ class _ChatScreenState extends State<_ChatScreen> {
   StreamSubscription? _chatSubscription;
   final Set<String> _messageIds = {}; // Track message IDs to prevent duplicates
   bool _isLoadingHistory = true;
-  List<File> _selectedFiles = [];
-  List<String> _selectedFileNames = [];
   ChatMessage? _replyingTo; // Track message being replied to
   ChatMessage? _editingMessage; // Track message being edited
   Map<String, String> _groupMembers = {}; // Cache for group member names
   bool _isRemoved = false; // Track if user is removed from group
+  String? _displayGroupName; // Updated group name from Group Info
 
 
-  @override
   @override
   void initState() {
     super.initState();
@@ -1174,10 +1192,14 @@ class _ChatScreenState extends State<_ChatScreen> {
        api.ApiService.markConversationRead(widget.contact.id);
     }
     
-    _loadChatHistory();
+    _initializeChat();
+  }
+
+  Future<void> _initializeChat() async {
     if (widget.contact.type == ContactType.group) {
-      _fetchGroupMembers();
+      await _fetchGroupMembers();
     }
+    _loadChatHistory();
     _initializeRealtimeChat();
   }
 
@@ -1210,11 +1232,13 @@ class _ChatScreenState extends State<_ChatScreen> {
           List<dynamic> membersList = [];
           if (members is List) {
             membersList = members as List<dynamic>;
-          } else if (members is Map && members.containsKey('users')) {
-             // Check if 'users' is list, otherwise it might be just the map itself if structure is different
-             if (members['users'] is List) {
-               membersList = members['users'];
-             }
+          } else if (members is Map) {
+            // Backend returns { members: [...], group_name: ... }
+            if (members.containsKey('members') && members['members'] is List) {
+              membersList = members['members'] as List<dynamic>;
+            } else if (members.containsKey('users') && members['users'] is List) {
+              membersList = members['users'] as List<dynamic>;
+            }
           }
 
           for (var m in membersList) {
@@ -1226,7 +1250,8 @@ class _ChatScreenState extends State<_ChatScreen> {
                if (id == widget.studentUserId) amIMember = true;
              }
           }
-          _isRemoved = !amIMember;
+          // Only treat as removed for THIS group when we got a valid member list and current user is not in it
+          _isRemoved = membersList.isNotEmpty && !amIMember;
         });
       }
     } catch (e) {
@@ -1255,8 +1280,56 @@ class _ChatScreenState extends State<_ChatScreen> {
             final messageText = msg['message_text']?.toString() ?? msg['message']?.toString() ?? '';
             final messageId = msg['message_id']?.toString() ?? msg['id']?.toString() ?? DateTime.now().toUtc().millisecondsSinceEpoch.toString();
             
-            final senderName = msg['sender_name']?.toString() ?? 
-                               (sender != null ? '${sender['first_name'] ?? ''} ${sender['last_name'] ?? ''}'.trim() : null);
+            String? rawSenderName = msg['sender_name']?.toString();
+            // Try to extract from sender object if sender_name is not available
+            if ((rawSenderName == null || rawSenderName.isEmpty || rawSenderName == 'Unknown') && sender != null) {
+              final firstName = sender['first_name']?.toString() ?? '';
+              final lastName = sender['last_name']?.toString() ?? '';
+              if (firstName.isNotEmpty || lastName.isNotEmpty) {
+                rawSenderName = '${firstName} ${lastName}'.trim();
+              } else {
+                final fullName = sender['full_name']?.toString();
+                if (fullName != null && fullName.isNotEmpty && fullName != 'null') {
+                  rawSenderName = fullName;
+                } else {
+                  rawSenderName = sender['username']?.toString();
+                }
+              }
+            }
+            
+            final bool isGroupChat = widget.contact.type == ContactType.group;
+            String? senderName;
+            if (rawSenderName != null && rawSenderName.trim().isNotEmpty && rawSenderName != 'Unknown') {
+              senderName = rawSenderName.trim();
+              // Update group members cache for group chats
+              if (isGroupChat && senderId.isNotEmpty) {
+                _groupMembers[senderId] = senderName;
+              }
+            } else if (isGroupChat && senderId.isNotEmpty) {
+              // Try group members cache first
+              senderName = _groupMembers[senderId];
+              // If not in cache and we have sender object, try to extract
+              if ((senderName == null || senderName.isEmpty || senderName == 'Unknown') && sender != null) {
+                final firstName = sender['first_name']?.toString() ?? '';
+                final lastName = sender['last_name']?.toString() ?? '';
+                if (firstName.isNotEmpty || lastName.isNotEmpty) {
+                  senderName = '${firstName} ${lastName}'.trim();
+                  _groupMembers[senderId] = senderName;
+                } else {
+                  final fullName = sender['full_name']?.toString();
+                  if (fullName != null && fullName.isNotEmpty && fullName != 'null') {
+                    senderName = fullName;
+                    _groupMembers[senderId] = senderName;
+                  } else {
+                    final username = sender['username']?.toString();
+                    if (username != null && username.isNotEmpty) {
+                      senderName = username;
+                      _groupMembers[senderId] = senderName;
+                    }
+                  }
+                }
+              }
+            }
             
             return ChatMessage(
               id: messageId,
@@ -1266,24 +1339,123 @@ class _ChatScreenState extends State<_ChatScreen> {
               isSent: isSent,
               timestamp: msg['created_at'] as String? ?? DateTime.now().toUtc().toIso8601String(),
               isRead: msg['is_read'] == true,
+              isEdited: msg['is_edited'] == true,
+              isDeleted: msg['is_deleted'] == true,
               attachmentUrl: msg['attachment_url']?.toString(),
               attachmentName: msg['attachment_name']?.toString(),
-              repliedToId: msg['replied_to_id']?.toString() ?? msg['replied_to']?.toString(), // Handle both formats
-              repliedToSenderName: msg['replied_to_sender_name']?.toString(), // Parse new field
-              repliedToText: msg['replied_to_text']?.toString(),             // Parse new field
+              repliedToId: msg['replied_to_id']?.toString() ?? msg['replied_to']?.toString(),
+              repliedToSenderName: msg['replied_to_sender_name']?.toString(),
+              repliedToText: msg['replied_to_text']?.toString(),
+              messageType: msg['message_type']?.toString() ?? 'text',
             );
           }).toList().reversed.toList();
 
           // Merge history safely
           final existingIds = _messages.map((m) => m.id).toSet();
-          final historySentTexts = history.where((h) => h.isSent).map((h) => h.text).toSet();
           
-          // Remove temp messages that are now represented in history
-          _messages.removeWhere((m) => m.id.startsWith('temp_') && historySentTexts.contains(m.text));
+          // Match temp messages with history messages more precisely
+          final tempMessages = _messages.where((m) => m.id.startsWith('temp_')).toList();
+          for (final tempMsg in tempMessages) {
+            final tempText = tempMsg.text;
+            final tempReplyId = tempMsg.repliedToId;
+            final tempTimestamp = tempMsg.timestamp;
+            
+            // Find matching message in history (same text, same reply context, and recent timestamp)
+            final matchingHistory = history.firstWhere(
+              (h) {
+                if (!h.isSent) return false; // Only match sent messages
+                if (h.text != tempText) return false;
+                if (tempReplyId != null && h.repliedToId != tempReplyId) return false;
+                // Check if timestamps are close (within 30 seconds)
+                try {
+                  final tempTime = DateTime.tryParse(tempTimestamp);
+                  final hTime = DateTime.tryParse(h.timestamp);
+                  if (tempTime != null && hTime != null) {
+                    final diff = tempTime.difference(hTime).abs().inSeconds;
+                    if (diff > 30) return false;
+                  }
+                } catch (e) {}
+                return true;
+              },
+              orElse: () => ChatMessage(
+                id: '',
+                text: '',
+                senderId: '',
+                isSent: false,
+                timestamp: '',
+              ),
+            );
+            
+            // If found, remove temp message (the real one from history will be added)
+            if (matchingHistory.id.isNotEmpty) {
+              _messages.removeWhere((m) => m.id == tempMsg.id);
+              _messageIds.remove(tempMsg.id);
+            }
+          }
           
-          // Add ONLY new messages from history
+          // Add new messages from history or update existing ones with reply metadata
           for (final msg in history) {
-            if (!existingIds.contains(msg.id)) {
+            if (existingIds.contains(msg.id)) {
+              // Update existing message with reply metadata if it's missing
+              final existingIdx = _messages.indexWhere((m) => m.id == msg.id);
+              if (existingIdx != -1) {
+                final existingMsg = _messages[existingIdx];
+                // Preserve reply metadata from API if it exists and existing is missing
+                if (msg.repliedToId != null && existingMsg.repliedToId == null) {
+                  _messages[existingIdx] = ChatMessage(
+                    id: existingMsg.id,
+                    text: existingMsg.text,
+                    senderId: existingMsg.senderId,
+                    senderName: existingMsg.senderName,
+                    isSent: existingMsg.isSent,
+                    timestamp: existingMsg.timestamp,
+                    isRead: existingMsg.isRead,
+                    isEdited: existingMsg.isEdited,
+                    isDeleted: existingMsg.isDeleted,
+                    attachmentUrl: existingMsg.attachmentUrl,
+                    attachmentName: existingMsg.attachmentName,
+                    repliedToId: msg.repliedToId,
+                    repliedToSenderName: msg.repliedToSenderName ?? existingMsg.repliedToSenderName,
+                    repliedToText: msg.repliedToText ?? existingMsg.repliedToText,
+                  );
+                } else if (msg.repliedToSenderName != null && existingMsg.repliedToSenderName == null) {
+                  _messages[existingIdx] = ChatMessage(
+                    id: existingMsg.id,
+                    text: existingMsg.text,
+                    senderId: existingMsg.senderId,
+                    senderName: existingMsg.senderName,
+                    isSent: existingMsg.isSent,
+                    timestamp: existingMsg.timestamp,
+                    isRead: existingMsg.isRead,
+                    isEdited: existingMsg.isEdited,
+                    isDeleted: existingMsg.isDeleted,
+                    attachmentUrl: existingMsg.attachmentUrl,
+                    attachmentName: existingMsg.attachmentName,
+                    repliedToId: existingMsg.repliedToId ?? msg.repliedToId,
+                    repliedToSenderName: msg.repliedToSenderName,
+                    repliedToText: existingMsg.repliedToText ?? msg.repliedToText,
+                  );
+                } else if (msg.repliedToText != null && existingMsg.repliedToText == null) {
+                  _messages[existingIdx] = ChatMessage(
+                    id: existingMsg.id,
+                    text: existingMsg.text,
+                    senderId: existingMsg.senderId,
+                    senderName: existingMsg.senderName,
+                    isSent: existingMsg.isSent,
+                    timestamp: existingMsg.timestamp,
+                    isRead: existingMsg.isRead,
+                    isEdited: existingMsg.isEdited,
+                    isDeleted: existingMsg.isDeleted,
+                    attachmentUrl: existingMsg.attachmentUrl,
+                    attachmentName: existingMsg.attachmentName,
+                    repliedToId: existingMsg.repliedToId ?? msg.repliedToId,
+                    repliedToSenderName: existingMsg.repliedToSenderName ?? msg.repliedToSenderName,
+                    repliedToText: msg.repliedToText,
+                  );
+                }
+              }
+            } else {
+              // Add new message
               _messages.add(msg);
               existingIds.add(msg.id);
             }
@@ -1328,15 +1500,58 @@ class _ChatScreenState extends State<_ChatScreen> {
         try {
           final data = event is String ? jsonDecode(event) : event;
           if (data is Map) {
-            if (data['type'] == 'chat.message') {
+            final eventType = data['type']?.toString();
+            if (eventType == 'message' || eventType == 'chat.message') {
               final messageId = data['message_id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString();
               final messageText = data['message']?.toString() ?? '';
               final senderId = data['sender_id']?.toString() ?? '';
               final senderUsername = data['sender_username']?.toString() ?? '';
-              final senderName = data['sender']?.toString();
+              String? senderName = data['sender_name']?.toString();
+              if (senderName == null || senderName.isEmpty || senderName == 'Unknown') {
+                // Try to get from sender object if it's a Map
+                if (data['sender'] is Map) {
+                  final sender = data['sender'] as Map;
+                  final firstName = sender['first_name']?.toString() ?? '';
+                  final lastName = sender['last_name']?.toString() ?? '';
+                  if (firstName.isNotEmpty || lastName.isNotEmpty) {
+                    senderName = '${firstName} ${lastName}'.trim();
+                  } else {
+                    final fullName = sender['full_name']?.toString();
+                    if (fullName != null && fullName.isNotEmpty && fullName != 'null') {
+                      senderName = fullName;
+                    } else {
+                      senderName = sender['username']?.toString();
+                    }
+                  }
+                }
+                // If still null, try group members cache
+                if ((senderName == null || senderName.isEmpty || senderName == 'Unknown') && isGroup && senderId.isNotEmpty) {
+                  senderName = _groupMembers[senderId];
+                  // If still not found, try to find from existing messages
+                  if ((senderName == null || senderName.isEmpty || senderName == 'Unknown')) {
+                    final existingMsg = _messages.firstWhere(
+                      (m) => m.senderId == senderId && m.senderName != null && m.senderName!.isNotEmpty && m.senderName != 'Unknown',
+                      orElse: () => ChatMessage(
+                        id: '',
+                        text: '',
+                        senderId: '',
+                        isSent: false,
+                        timestamp: '',
+                      ),
+                    );
+                    if (existingMsg.senderName != null && existingMsg.senderName!.isNotEmpty) {
+                      senderName = existingMsg.senderName;
+                      // Also update group members cache for future use
+                      _groupMembers[senderId] = senderName!;
+                    }
+                  }
+                }
+              }
               final timestamp = data['timestamp']?.toString() ?? DateTime.now().toUtc().toIso8601String();
+              final messageType = data['message_type']?.toString() ?? 'text';
               
-              if (messageText.isEmpty) return;
+              // Allow system messages even if messageText is empty
+              if (messageText.isEmpty && messageType != 'system') return;
               
               // Filtering
               bool forThisChat = false;
@@ -1355,9 +1570,70 @@ class _ChatScreenState extends State<_ChatScreen> {
               }
               
               if (!forThisChat) return;
-              if (_messageIds.contains(messageId)) return;
               
               final isSent = senderId == widget.studentUserId || senderUsername == widget.studentUsername;
+              
+              // For sent messages, check if there's a temp message that should be updated
+              if (isSent && messageId.isNotEmpty) {
+                // Check if we already have this message (by ID)
+                if (_messageIds.contains(messageId) || _messages.any((msg) => msg.id == messageId)) {
+                  debugPrint('Message already exists with ID: $messageId, skipping duplicate');
+                  return;
+                }
+                
+                // Check for matching temp message (same text, same sender, recent timestamp)
+                final tempMatchIndex = _messages.indexWhere((msg) {
+                  if (!msg.isSent) return false;
+                  if (!msg.id.startsWith('temp_')) return false;
+                  if (msg.text != messageText) return false;
+                  try {
+                    final msgTime = DateTime.tryParse(msg.timestamp);
+                    if (msgTime != null) {
+                      final newTime = DateTime.tryParse(timestamp);
+                      if (newTime != null) {
+                        final diff = msgTime.difference(newTime).abs().inSeconds;
+                        if (diff <= 30) return true; // Within 30 seconds
+                      }
+                    }
+                  } catch (e) {}
+                  return false;
+                });
+                
+                if (tempMatchIndex != -1) {
+                  // Update the temp message with real ID
+                  if (mounted) {
+                    setState(() {
+                      final oldTempId = _messages[tempMatchIndex].id;
+                      _messages[tempMatchIndex] = ChatMessage(
+                        id: messageId,
+                        text: messageText,
+                        senderId: senderId,
+                        senderName: senderName,
+                        isSent: isSent,
+                        timestamp: timestamp,
+                        attachmentUrl: data['attachment_url']?.toString(),
+                        attachmentName: data['attachment_name']?.toString(),
+                        repliedToId: data['replied_to_id']?.toString() ?? _messages[tempMatchIndex].repliedToId,
+                        repliedToSenderName: data['replied_to_sender_name']?.toString() ?? _messages[tempMatchIndex].repliedToSenderName,
+                        repliedToText: data['replied_to_text']?.toString() ?? _messages[tempMatchIndex].repliedToText,
+                        messageType: messageType,
+                        isRead: false,
+                      );
+                      _messageIds.remove(oldTempId);
+                      _messageIds.add(messageId);
+                      _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+                    });
+                    debugPrint('Updated temp message with real ID from WebSocket: $messageId');
+                  }
+                  return;
+                }
+              }
+              
+              // Check if message already exists (prevent duplicates)
+              if (_messageIds.contains(messageId) || _messages.any((msg) => msg.id == messageId)) {
+                debugPrint('Message already exists with ID: $messageId, skipping duplicate');
+                return;
+              }
               
               if (mounted) {
                 setState(() {
@@ -1374,11 +1650,140 @@ class _ChatScreenState extends State<_ChatScreen> {
                     repliedToId: data['replied_to_id']?.toString(),
                     repliedToSenderName: data['replied_to_sender_name']?.toString(),
                     repliedToText: data['replied_to_text']?.toString(),
+                    messageType: messageType,
                     isRead: false,
                   ));
                   _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
                 });
                 _scrollToBottom();
+              }
+            } else if (data['type'] == 'chat.message_edited') {
+              final messageId = data['message_id']?.toString();
+              final newText = data['new_text']?.toString();
+              if (messageId != null && newText != null) {
+                if (mounted) {
+                  setState(() {
+                    final index = _messages.indexWhere((m) => m.id == messageId);
+                    if (index != -1) {
+                      final oldMsg = _messages[index];
+                      _messages[index] = ChatMessage(
+                        id: oldMsg.id,
+                        text: newText,
+                        senderId: oldMsg.senderId,
+                        senderName: oldMsg.senderName,
+                        isSent: oldMsg.isSent,
+                        timestamp: oldMsg.timestamp,
+                        isRead: oldMsg.isRead,
+                        isEdited: true,
+                        isDeleted: oldMsg.isDeleted,
+                        attachmentUrl: oldMsg.attachmentUrl,
+                        attachmentName: oldMsg.attachmentName,
+                        repliedToId: oldMsg.repliedToId,
+                        repliedToSenderName: oldMsg.repliedToSenderName,
+                        repliedToText: oldMsg.repliedToText,
+                      );
+                    }
+                  });
+                }
+              }
+            } else if (eventType == 'message_deleted' || eventType == 'chat.message_deleted') {
+              final messageId = data['message_id']?.toString();
+              if (messageId != null) {
+                if (mounted) {
+                  setState(() {
+                    final index = _messages.indexWhere((m) => m.id == messageId);
+                    if (index != -1) {
+                      final oldMsg = _messages[index];
+                      _messages[index] = ChatMessage(
+                        id: oldMsg.id,
+                        text: 'This message was deleted',
+                        senderId: oldMsg.senderId,
+                        senderName: oldMsg.senderName,
+                        isSent: oldMsg.isSent,
+                        timestamp: oldMsg.timestamp,
+                        isRead: oldMsg.isRead,
+                        isEdited: oldMsg.isEdited,
+                        isDeleted: true,
+                        attachmentUrl: null,
+                        attachmentName: null,
+                        repliedToId: oldMsg.repliedToId,
+                        repliedToSenderName: oldMsg.repliedToSenderName,
+                        repliedToText: oldMsg.repliedToText,
+                      );
+                    }
+                  });
+                }
+              }
+            } else if (eventType == 'chat.messages_read') {
+              // WhatsApp-like double tick: other party read my messages
+              final readByUserId = data['read_by_user_id']?.toString() ?? '';
+              final eventGroupId = data['group_id']?.toString() ?? '';
+              final bool forThisChat = isGroup
+                  ? (eventGroupId == widget.contact.id)
+                  : (readByUserId == widget.contact.id);
+              if (forThisChat && mounted) {
+                setState(() {
+                  for (int i = 0; i < _messages.length; i++) {
+                    final m = _messages[i];
+                    if (m.isSent) {
+                      _messages[i] = ChatMessage(
+                        id: m.id,
+                        text: m.text,
+                        senderId: m.senderId,
+                        senderName: m.senderName,
+                        isSent: m.isSent,
+                        timestamp: m.timestamp,
+                        isRead: true,
+                        isEdited: m.isEdited,
+                        isDeleted: m.isDeleted,
+                        attachmentUrl: m.attachmentUrl,
+                        attachmentName: m.attachmentName,
+                        repliedToId: m.repliedToId,
+                        repliedToSenderName: m.repliedToSenderName,
+                        repliedToText: m.repliedToText,
+                      );
+                    }
+                  }
+                });
+              }
+            } else if (eventType == 'chat.group_updated') {
+              // Participants see updated group name / new members (like WhatsApp)
+              final eventGroupId = data['group_id']?.toString() ?? '';
+              if (isGroup && eventGroupId == widget.contact.id && mounted) {
+                final updatedType = data['updated_type']?.toString() ?? '';
+                final newName = data['group_name']?.toString();
+                if (newName != null && newName.isNotEmpty) {
+                  setState(() => _displayGroupName = newName);
+                }
+                if (updatedType == 'name') {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Group name updated')),
+                  );
+                } else if (updatedType == 'members_added') {
+                  // System messages are created by backend, reload chat history to show them
+                  _loadChatHistory();
+                } else if (updatedType == 'members_removed') {
+                  // System messages are created by backend, reload chat history to show them
+                  _loadChatHistory();
+                }
+              }
+            } else if (data['type'] == 'group_removal') {
+              final rid = data['group_id']?.toString();
+              final removedUserId = data['user_id']?.toString() ?? data['member_id']?.toString();
+              
+              if (rid == widget.contact.id) {
+                if (removedUserId != null && removedUserId != widget.studentUserId) {
+                   debugPrint('Ignored group_removal for another user: $removedUserId (me: ${widget.studentUserId})');
+                   return; // Stay in the loop/function, just don't process this event as my removal
+                }
+                if (mounted) {
+                  setState(() {
+                    _isRemoved = true;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(data['message'] ?? 'You have been removed from this group')),
+                    );
+                  });
+                }
               }
             }
           }
@@ -1411,16 +1816,16 @@ class _ChatScreenState extends State<_ChatScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Message?'),
-        content: const Text('This will remove the message for everyone.'),
+        title: const Text('Delete Message'),
+        content: const Text('Are you sure you want to delete this message? This action cannot be undone.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.of(context).pop();
               _softDeleteMessage(message);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -1432,16 +1837,40 @@ class _ChatScreenState extends State<_ChatScreen> {
   }
 
   Future<void> _softDeleteMessage(ChatMessage message) async {
-    setState(() {
-      _messages.removeWhere((m) => m.id == message.id);
-    });
+    // Optimistic UI update
+    if (mounted) {
+      setState(() {
+        final index = _messages.indexWhere((m) => m.id == message.id);
+        if (index != -1) {
+          final oldMsg = _messages[index];
+          _messages[index] = ChatMessage(
+            id: oldMsg.id,
+            text: 'This message was deleted',
+            senderId: oldMsg.senderId,
+            senderName: oldMsg.senderName,
+            isSent: oldMsg.isSent,
+            timestamp: oldMsg.timestamp,
+            isRead: oldMsg.isRead,
+            isEdited: oldMsg.isEdited,
+            isDeleted: true,
+            attachmentUrl: null,
+            attachmentName: null,
+            repliedToId: oldMsg.repliedToId,
+            repliedToSenderName: oldMsg.repliedToSenderName,
+            repliedToText: oldMsg.repliedToText,
+          );
+        }
+      });
+    }
 
     final success = await api.ApiService.deleteMessage(message.id);
     if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to delete message')),
-      );
-      _loadChatHistory();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete message')),
+        );
+        // On failure, we might want to reload history to revert UI, but for now just show error
+      }
     }
   }
 
@@ -1515,18 +1944,18 @@ class _ChatScreenState extends State<_ChatScreen> {
       } else {
         if (['.jpg', '.jpeg', '.png'].any((ext) => url.toLowerCase().endsWith(ext))) {
            var response = await Dio().get(url, options: Options(responseType: ResponseType.bytes));
-           final result = await ImageGallerySaver.saveImage(
+           final result = await ImageGallerySaverPlus.saveImage(
              Uint8List.fromList(response.data),
              quality: 100, 
              name: fileName
            );
-           if (result['isSuccess']) {
+           if (result != null && result['isSuccess'] == true) {
              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image saved to Gallery')));
            }
         } else {
-           if (await canLaunchUrl(Uri.parse(url))) {
+           try {
              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-           }
+           } catch (_) {}
         }
       }
     } catch (e) {
@@ -1551,111 +1980,10 @@ class _ChatScreenState extends State<_ChatScreen> {
     });
   }
 
-  Future<void> _pickAttachment() async {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Choose from Gallery'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final ImagePicker picker = ImagePicker();
-                  final List<XFile> images = await picker.pickMultiImage();
-                  if (images.isNotEmpty) {
-                    setState(() {
-                      for (var image in images) {
-                        _selectedFiles.add(File(image.path));
-                        _selectedFileNames.add(image.name);
-                      }
-                    });
-                  }
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.insert_drive_file),
-                title: const Text('Choose Document'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true);
-                  if (result != null) {
-                    setState(() {
-                      for (var file in result.files) {
-                        if (file.path != null) {
-                          _selectedFiles.add(File(file.path!));
-                          _selectedFileNames.add(file.name);
-                        }
-                      }
-                    });
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _openCamera() async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.camera);
-    if (image != null) {
-      if (!mounted) return;
-      final bool? shouldSend = await showDialog<bool>(
-        context: context,
-        builder: (context) => Dialog.fullscreen(
-          child: Container(
-            color: Colors.black,
-            child: Stack(
-              children: [
-                Center(child: kIsWeb ? Image.network(image.path) : Image.file(File(image.path))),
-                Positioned(
-                  top: 40, left: 20,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                    onPressed: () => Navigator.pop(context, false),
-                  ),
-                ),
-                Positioned(
-                  bottom: 30, right: 20,
-                  child: FloatingActionButton(
-                    backgroundColor: const Color(0xFF075E54),
-                    child: const Icon(Icons.send, color: Colors.white),
-                    onPressed: () => Navigator.pop(context, true),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      if (shouldSend == true) {
-        setState(() {
-          _selectedFiles.add(File(image.path));
-          _selectedFileNames.add(image.name);
-        });
-        _sendMessage();
-      }
-    }
-    } catch (e) {
-      debugPrint('Error opening camera: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open camera: ${e.toString()}')),
-        );
-      }
-    }
-  }
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty && _selectedFiles.isEmpty) return;
+    if (text.isEmpty) return;
     
     // Handle editing mode
     if (_editingMessage != null) {
@@ -1667,31 +1995,15 @@ class _ChatScreenState extends State<_ChatScreen> {
       return;
     }
     
-    final List<File> filesToSend = List.from(_selectedFiles);
-    final List<String> fileNamesToSend = List.from(_selectedFileNames);
     final replyId = _replyingTo?.id;
     
     _messageController.clear();
     setState(() {
-      _selectedFiles.clear();
-      _selectedFileNames.clear();
       _replyingTo = null;
     });
 
-    if (text.isNotEmpty && filesToSend.isEmpty) {
+    if (text.isNotEmpty) {
       await _sendSingleMessage(text: text, replyId: replyId);
-    } else if (filesToSend.isNotEmpty) {
-      for (int i = 0; i < filesToSend.length; i++) {
-        final file = filesToSend[i];
-        final fileName = fileNamesToSend[i];
-        final caption = (i == 0 && text.isNotEmpty) ? text : null;
-        await _sendSingleMessage(
-          text: caption,
-          file: file,
-          fileName: fileName,
-          replyId: i == 0 ? replyId : null,
-        );
-      }
     }
   }
 
@@ -1737,30 +2049,23 @@ class _ChatScreenState extends State<_ChatScreen> {
     }
   }
 
-  Future<void> _sendSingleMessage({String? text, File? file, String? fileName, String? replyId}) async {
-    final messageText = text ?? (file != null ? '[Attachment]' : '');
-    if (messageText.isEmpty && file == null) return;
+  Future<void> _sendSingleMessage({String? text, String? replyId}) async {
+    if (text == null || text.isEmpty) return;
 
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}_${messageText.hashCode}';
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}_${text.hashCode}';
     final tempTimestamp = DateTime.now().toUtc().toIso8601String();
-    final localFilePath = file?.path;
-    
-    List<int>? fileBytes;
-    if (file != null && kIsWeb) {
-      try { fileBytes = await file.readAsBytes(); } catch (_) {}
-    }
     
     setState(() {
       _messageIds.add(tempId);
       _messages.add(ChatMessage(
         id: tempId,
-        text: messageText,
+        text: text,
         senderId: widget.studentUserId,
         senderName: widget.studentName,
         isSent: true,
         timestamp: tempTimestamp,
-        attachmentUrl: localFilePath,
-        attachmentName: fileName,
+        attachmentUrl: null,
+        attachmentName: null,
         repliedToId: replyId,
         repliedToSenderName: _replyingTo != null ? _getSenderName(_replyingTo!) : null,
         repliedToText: _replyingTo?.text,
@@ -1782,13 +2087,10 @@ class _ChatScreenState extends State<_ChatScreen> {
       final response = await api.ApiService.sendMessageWithAttachment(
         recipient: widget.contact.username,
         messageText: text,
-        filePath: kIsWeb ? null : localFilePath,
-        fileBytes: fileBytes,
-        fileName: fileName,
-        messageType: localFilePath != null ? 
-            (localFilePath.toLowerCase().endsWith('.jpg') || 
-             localFilePath.toLowerCase().endsWith('.jpeg') || 
-             localFilePath.toLowerCase().endsWith('.png') ? 'image' : 'file') : 'text',
+        filePath: null,
+        fileBytes: null,
+        fileName: null,
+        messageType: 'text',
         groupId: groupId,
         otherUserId: otherUserId,
         repliedTo: replyId,
@@ -1799,16 +2101,20 @@ class _ChatScreenState extends State<_ChatScreen> {
         setState(() {
           final idx = _messages.indexWhere((m) => m.id == tempId);
           if (idx != -1) {
+            final oldMsg = _messages[idx];
             _messages[idx] = ChatMessage(
               id: realId,
-              text: response['message_text'] ?? messageText,
+              text: response['message_text'] ?? text,
               senderId: widget.studentUserId,
               senderName: widget.studentName,
               isSent: true,
               timestamp: response['created_at'] ?? tempTimestamp,
-              attachmentUrl: response['attachment_url'] ?? localFilePath,
-              attachmentName: response['attachment_name'] ?? fileName,
+              attachmentUrl: null,
+              attachmentName: null,
               repliedToId: replyId,
+              repliedToSenderName: response['replied_to_sender_name']?.toString() ?? oldMsg.repliedToSenderName,
+              repliedToText: response['replied_to_text']?.toString() ?? oldMsg.repliedToText,
+              messageType: response['message_type']?.toString() ?? 'text',
             );
             _messageIds.remove(tempId);
             _messageIds.add(realId);
@@ -1905,7 +2211,7 @@ class _ChatScreenState extends State<_ChatScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.contact.name,
+                      _displayGroupName ?? widget.contact.name,
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 2),
@@ -2002,19 +2308,47 @@ class _ChatScreenState extends State<_ChatScreen> {
   }
 
   String _getSenderName(ChatMessage message) {
+    // First check if sender name is already set and valid
     if (message.senderName != null && message.senderName!.isNotEmpty && message.senderName != 'Unknown') {
       return message.senderName!;
     }
+    
+    // Check if it's the current user
     if (message.senderId == widget.studentUserId) {
       return widget.studentName;
     }
+    
+    // For non-group chats, use contact name
     if (widget.contact.type != ContactType.group && message.senderId == widget.contact.id) {
       return widget.contact.name;
     }
-    // Check group members cache
-    if (_groupMembers.containsKey(message.senderId)) {
-      return _groupMembers[message.senderId]!;
+    
+    // For group chats, check group members cache
+    if (widget.contact.type == ContactType.group) {
+      if (_groupMembers.containsKey(message.senderId)) {
+        final name = _groupMembers[message.senderId]!;
+        if (name.isNotEmpty && name != 'Unknown') {
+          return name;
+        }
+      }
+      // If not in cache, try to get from any existing messages from the same sender
+      if (message.senderId.isNotEmpty) {
+        // Search through all messages to find sender name
+        for (final m in _messages) {
+          if (m.senderId == message.senderId && m.senderName != null && m.senderName!.isNotEmpty && m.senderName != 'Unknown') {
+            // Update cache for future use
+            _groupMembers[message.senderId] = m.senderName!;
+            return m.senderName!;
+          }
+        }
+        // If still not found, try to reload group members (async, but will help future messages)
+        if (!_groupMembers.containsKey(message.senderId)) {
+          _fetchGroupMembers();
+        }
+      }
     }
+    
+    // Last resort: return "Unknown" (don't show UUID)
     return "Unknown";
   }
 
@@ -2033,42 +2367,67 @@ class _ChatScreenState extends State<_ChatScreen> {
 
   Widget _buildMessageBubble(ChatMessage message) {
     final bool isGroup = widget.contact.type == ContactType.group;
+    final bool isSystem = message.messageType == 'system';
+    
+    // System messages: centered, gray, italic (like WhatsApp)
+    if (isSystem) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Center(
+          child: Text(
+            message.text,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+    
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Dismissible(
         key: Key(message.id),
         direction: DismissDirection.startToEnd,
         confirmDismiss: (direction) async {
-          // Trigger reply when swiped right
           _onReply(message);
-          return false; // Don't actually dismiss the message
+          return false;
         },
         background: Container(
           alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.only(left: 20),
-          child: const Icon(
-            Icons.reply,
-            color: Color(0xFF667eea),
-            size: 28,
-          ),
+          child: const Icon(Icons.reply, color: Color(0xFF667eea), size: 28),
         ),
         child: Row(
         mainAxisAlignment: message.isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!message.isSent) ...[
+          // Left avatar: group received (sender) OR individual received (contact)
+          if (isGroup && !message.isSent) ...[
             CircleAvatar(
-              radius: 16,
-              backgroundColor: isGroup 
-                  ? _getSenderColor(message.senderId) 
-                  : Colors.grey[300],
+              radius: 14,
+              backgroundColor: _getSenderColor(message.senderId).withOpacity(0.2),
               child: Text(
-                isGroup 
-                    ? _getAvatarInitials(_getSenderName(message)) 
-                    : widget.contact.avatar,
+                message.senderName != null && message.senderName!.isNotEmpty ? message.senderName![0] : '?',
                 style: TextStyle(
-                  color: isGroup ? Colors.white : Colors.black87, 
-                  fontWeight: FontWeight.bold, 
+                  color: _getSenderColor(message.senderId),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          if (!isGroup && !message.isSent) ...[
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: Colors.grey[300]!,
+              child: Text(
+                _getAvatarInitials(widget.contact.name),
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.bold,
                   fontSize: 10
                 ),
               ),
@@ -2094,7 +2453,7 @@ class _ChatScreenState extends State<_ChatScreen> {
                   children: [
                     if (isGroup && !message.isSent) ...[
                       Text(
-                        _getSenderName(message), 
+                        message.senderName ?? "Unknown", 
                         style: TextStyle(
                           color: _getSenderColor(message.senderId), 
                           fontWeight: FontWeight.bold, 
@@ -2103,93 +2462,38 @@ class _ChatScreenState extends State<_ChatScreen> {
                       ),
                       const SizedBox(height: 4),
                     ],
-                    if (message.repliedToId != null) ...[
-                      Builder(
-                        builder: (context) {
-                          // Determine sender name for the replied message
-                          String replySenderName = message.repliedToSenderName ?? "Unknown";
-                          String replyText = message.repliedToText ?? "";
-                          
-                          // Fallback to local lookup if fields are missing
-                          if (replySenderName == "Unknown" || replyText.isEmpty) {
-                             final repliedMessage = _messages.firstWhere(
-                               (m) => m.id == message.repliedToId,
-                               orElse: () => ChatMessage(
-                                 id: 'unknown',
-                                 text: 'Message not found',
-                                 senderId: 'unknown',
-                                 isSent: false,
-                                 timestamp: '',
-                               ),
-                             );
-                             
-                             if (replySenderName == "Unknown") {
-                               replySenderName = _getSenderName(repliedMessage);
-                               if (replySenderName == "Unknown" && repliedMessage.isSent) replySenderName = "You";
-                             }
-                             
-                             if (replyText.isEmpty) {
-                                replyText = repliedMessage.text.isNotEmpty 
-                                  ? repliedMessage.text 
-                                  : (repliedMessage.attachmentUrl != null ? '📷 Photo' : '');
-                             }
-                          }
+                    if (message.isDeleted)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          '🚫 This message was deleted',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontStyle: FontStyle.italic,
+                            fontSize: 14,
+                          ),
+                        ),
+                      )
+                    else ...[
+                      if ((message.repliedToId != null || message.repliedToSenderName != null || (message.repliedToText != null && message.repliedToText!.isNotEmpty)))
+                        _buildReplyPreview(message),
 
-                          return Container(
-                            padding: const EdgeInsets.all(8),
-                            margin: const EdgeInsets.only(bottom: 8),
-                            decoration: BoxDecoration(
-                              color: message.isSent ? Colors.black.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border(
-                                left: BorderSide(
-                                  color: message.isSent ? Colors.white70 : const Color(0xFF667eea),
-                                  width: 4,
-                                ),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  replySenderName,
-                                  style: TextStyle(
-                                    color: message.isSent ? Colors.white70 : const Color(0xFF667eea),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  replyText,
-                                  style: TextStyle(
-                                    color: message.isSent ? Colors.white70 : Colors.black54,
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                      ),
+                      if (message.attachmentUrl != null && message.attachmentUrl!.isNotEmpty) ...[
+                        _buildAttachment(message),
+                        const SizedBox(height: 4),
+                      ],
+                      if (message.text.isNotEmpty)
+                        Text(message.text, style: const TextStyle(color: Colors.black87, fontSize: 15)),
                     ],
-
-
-                    if (message.attachmentUrl != null && message.attachmentUrl!.isNotEmpty) ...[
-                      _buildAttachment(message),
-                      const SizedBox(height: 4),
-                    ],
-                    if (message.text.isNotEmpty)
-                      Text(message.text, style: const TextStyle(color: Colors.black87, fontSize: 15)),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_formatMessageTime(message.timestamp), style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                        Text(
+                          "${_formatMessageTime(message.timestamp)}${message.isEdited && !message.isDeleted ? ' (Edited)' : ''}",
+                          style: TextStyle(fontSize: 10, color: Colors.grey[600])
+                        ),
                         if (message.isSent) ...[
                           const SizedBox(width: 4),
                           Icon(message.isRead ? Icons.done_all : Icons.done, size: 14, color: message.isRead ? const Color(0xFF34B7F1) : Colors.grey),
@@ -2203,14 +2507,15 @@ class _ChatScreenState extends State<_ChatScreen> {
           ),
         ],
       ),
-    ),
-  );
+      ),
+    );
   }
 
 
   Widget _buildAttachment(ChatMessage message) {
     final url = message.attachmentUrl!;
-    final isImage = url.toLowerCase().endsWith('.jpg') || url.toLowerCase().endsWith('.png') || url.toLowerCase().endsWith('.jpeg');
+    final isImage = url.toLowerCase().endsWith('.jpg') || url.toLowerCase().endsWith('.png') ||
+        url.toLowerCase().endsWith('.jpeg') || url.toLowerCase().endsWith('.webp') || url.toLowerCase().endsWith('.gif');
     
     return GestureDetector(
       onTap: () => _downloadAttachment(message),
@@ -2274,12 +2579,9 @@ class _ChatScreenState extends State<_ChatScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_editingMessage != null) _buildEditingPreview(),
-          if (_replyingTo != null) _buildReplyPreview(),
-          if (_selectedFileNames.isNotEmpty) _buildFilesPreview(),
+          if (_replyingTo != null) _buildInputReplyPreview(),
           Row(
             children: [
-              IconButton(icon: const Icon(Icons.attach_file, color: Color(0xFF667eea)), onPressed: _pickAttachment),
-              IconButton(icon: const Icon(Icons.camera_alt, color: Color(0xFF667eea)), onPressed: _openCamera),
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(25)),
@@ -2287,7 +2589,7 @@ class _ChatScreenState extends State<_ChatScreen> {
                     controller: _messageController,
                     textInputAction: TextInputAction.send,
                     decoration: InputDecoration(
-                      hintText: _selectedFileNames.isNotEmpty ? 'Add a caption...' : 'Type a message...',
+                      hintText: 'Type a message...',
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
@@ -2308,7 +2610,8 @@ class _ChatScreenState extends State<_ChatScreen> {
     );
   }
 
-  Widget _buildReplyPreview() {
+  Widget _buildInputReplyPreview() {
+    final replyToName = _replyingTo!.senderId == widget.studentUserId ? 'You' : (_replyingTo!.senderName ?? _getSenderName(_replyingTo!));
     return Container(
       padding: const EdgeInsets.all(8),
       margin: const EdgeInsets.only(bottom: 8),
@@ -2317,12 +2620,98 @@ class _ChatScreenState extends State<_ChatScreen> {
         children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
-              _replyingTo!.senderId == widget.studentUserId ? 'You' : (_replyingTo!.senderName ?? _getSenderName(_replyingTo!)),
+              'Replying to $replyToName',
               style: const TextStyle(color: Color(0xFF667eea), fontWeight: FontWeight.bold, fontSize: 13)
             ),
             Text(_replyingTo!.text, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
           ])),
           IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => setState(() => _replyingTo = null)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReplyPreview(ChatMessage message) {
+    final hasReply = message.repliedToId != null ||
+        (message.repliedToSenderName != null && message.repliedToSenderName!.isNotEmpty) ||
+        (message.repliedToText != null && message.repliedToText!.isNotEmpty);
+    if (!hasReply) return const SizedBox.shrink();
+
+    String replySender = message.repliedToSenderName?.trim().isNotEmpty == true
+        ? message.repliedToSenderName!
+        : 'Unknown';
+    String replyText = message.repliedToText?.trim().isNotEmpty == true
+        ? message.repliedToText!
+        : 'Attachment';
+
+    // If reply metadata is missing, try to find the original message
+    if (replySender == 'Unknown' || replyText.isEmpty) {
+      final repliedMessage = _messages.firstWhere(
+        (m) => m.id == message.repliedToId,
+        orElse: () => ChatMessage(
+          id: 'unknown',
+          text: 'Message not found',
+          senderId: 'unknown',
+          isSent: false,
+          timestamp: '',
+        ),
+      );
+      
+      if (repliedMessage.id != 'unknown') {
+        if (replySender == 'Unknown') {
+          if (repliedMessage.senderId == widget.studentUserId) {
+            replySender = 'You';
+          } else if (repliedMessage.senderName != null && repliedMessage.senderName!.isNotEmpty) {
+            replySender = repliedMessage.senderName!;
+          } else if (widget.contact.type == ContactType.group) {
+            replySender = _getSenderName(repliedMessage);
+          } else {
+            replySender = widget.contact.name;
+          }
+        }
+        
+        if (replyText.isEmpty || replyText == 'Attachment') {
+          replyText = repliedMessage.text.isNotEmpty
+              ? repliedMessage.text
+              : (repliedMessage.attachmentUrl != null ? '📷 Photo' : 'Attachment');
+        }
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(
+            color: message.isSent ? const Color(0xFF667eea) : const Color(0xFF667eea),
+            width: 4,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            replySender,
+            style: const TextStyle(
+              color: Color(0xFF667eea),
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            replyText,
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: 12,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
@@ -2347,25 +2736,19 @@ class _ChatScreenState extends State<_ChatScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Edit Message',
-                  style: TextStyle(
-                    color: Colors.orange,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13
-                  )
+                  'Editing Message',
+                  style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13)
                 ),
                 Text(
                   _editingMessage!.text,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12
-                  )
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12)
                 ),
-              ]
+              ],
             )
           ),
           IconButton(
@@ -2380,34 +2763,6 @@ class _ChatScreenState extends State<_ChatScreen> {
     );
   }
 
-  Widget _buildFilesPreview() {
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _selectedFileNames.length,
-        itemBuilder: (context, index) {
-          final name = _selectedFileNames[index];
-          return Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(20)),
-            child: Row(
-              children: [
-                const Icon(Icons.attach_file, size: 16, color: Color(0xFF667eea)),
-                const SizedBox(width: 4),
-                Text(name, style: const TextStyle(fontSize: 12)),
-                const SizedBox(width: 4),
-                GestureDetector(onTap: () => setState(() { _selectedFiles.removeAt(index); _selectedFileNames.removeAt(index); }), child: const Icon(Icons.close, size: 16, color: Colors.grey)),
-              ],
-            ),
-          );
-        },
-
-      ),
-    );
-  }
 
   void _showGroupInfo() {
       if (widget.contact.type != ContactType.group) return;
@@ -2416,26 +2771,28 @@ class _ChatScreenState extends State<_ChatScreen> {
         builder: (context) => GroupInfoDialog(
           groupId: widget.contact.id,
           groupName: widget.contact.name,
-          onNameUpdated: (name) {},
-          isReadOnly: true,
+          currentUserId: widget.studentUserId,
+          onNameUpdated: (name) {
+            setState(() => _displayGroupName = name);
+          },
         ),
       );
   }
 }
 
-// Group Info Dialog (Student View - Read Only mostly)
+// Group Info Dialog (Student portal - creator can edit/add/remove; participants view only)
 class GroupInfoDialog extends StatefulWidget {
   final String groupId;
   final String groupName;
+  final String currentUserId;
   final Function(String) onNameUpdated;
-  final bool isReadOnly;
 
   const GroupInfoDialog({
     Key? key,
     required this.groupId,
     required this.groupName,
+    required this.currentUserId,
     required this.onNameUpdated,
-    this.isReadOnly = true,
   }) : super(key: key);
 
   @override
@@ -2446,6 +2803,7 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _members = [];
   String _currentName = '';
+  bool _isCreator = false;
 
   @override
   void initState() {
@@ -2458,14 +2816,14 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
     setState(() => _isLoading = true);
     try {
       final data = await api.ApiService.getGroupMembers(widget.groupId);
-      if (data != null && data.isNotEmpty) {
+      if (data.isNotEmpty) {
         setState(() {
-          if (data is List) {
-             _members = List<Map<String, dynamic>>.from(data as List);
-          } else if (data is Map && data.containsKey('users')) {
-             _members = List<Map<String, dynamic>>.from(data['users'] as List);
-          }
+          _members = List<Map<String, dynamic>>.from(data['members'] ?? []);
+          _currentName = data['group_name']?.toString() ?? _currentName;
+          _isCreator = data['is_creator'] == true;
         });
+        final latestName = data['group_name']?.toString() ?? _currentName;
+        if (latestName.isNotEmpty) widget.onNameUpdated(latestName);
       }
     } catch (e) {
       debugPrint('Error fetching group members: $e');
@@ -2474,159 +2832,174 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
     }
   }
 
+  String _memberSubtext(Map<String, dynamic> member) {
+    final role = member['role']?.toString() ?? '';
+    if (role == 'student_parent') {
+      final cn = member['class_name']?.toString();
+      final sec = member['section']?.toString();
+      if (cn != null && cn.isNotEmpty) return 'Class $cn${sec != null && sec.isNotEmpty ? ' - $sec' : ''}';
+    } else if (role == 'teacher') {
+      final sub = member['subject']?.toString();
+      if (sub != null && sub.isNotEmpty) return sub;
+    }
+    return '';
+  }
+
+  Future<void> _editName() async {
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final c = TextEditingController(text: _currentName);
+        return AlertDialog(
+          title: const Text('Edit group name'),
+          content: TextField(controller: c, decoration: const InputDecoration(labelText: 'Group name'), autofocus: true),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(ctx, c.text.trim()), child: const Text('Save')),
+          ],
+        );
+      },
+    );
+    if (newName != null && newName.isNotEmpty && newName != _currentName) {
+      final ok = await api.ApiService.updateGroupName(widget.groupId, newName);
+      if (ok && mounted) {
+        setState(() => _currentName = newName);
+        widget.onNameUpdated(newName);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Group name updated')));
+      }
+    }
+  }
+
+  Future<void> _addParticipants() async {
+    final addable = await api.ApiService.getAddableGroupMembers(widget.groupId);
+    if (!mounted) return;
+    final selected = await showDialog<List<String>>(
+      context: context,
+      builder: (ctx) => _AddMembersSheetStudent(users: addable),
+    );
+    if (selected != null && selected.isNotEmpty) {
+      final ok = await api.ApiService.addGroupMembers(widget.groupId, selected);
+      if (ok && mounted) {
+        _fetchMembers();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Members added')));
+      }
+    }
+  }
+
+  Future<void> _removeMember(String userId, String name) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove member'),
+        content: Text('Remove $name from the group?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), style: TextButton.styleFrom(foregroundColor: Colors.red), child: const Text('Remove')),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      final ok = await api.ApiService.removeGroupMember(widget.groupId, userId);
+      if (ok && mounted) {
+        setState(() => _members.removeWhere((m) => m['user_id']?.toString() == userId));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$name removed')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
       child: Container(
-        width: 400,
-        height: 600,
-        padding: const EdgeInsets.all(20),
+        width: 420,
+        height: 640, // Fixed height
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-             Row(
+            // Fixed header
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Group Info',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
+                const Text('Group info', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
               ],
             ),
-            const Divider(),
-            const SizedBox(height: 10),
-            // Group Name Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: const Color(0xFF667eea),
-                    child: const Icon(Icons.group, color: Colors.white),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _currentName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            // Scrollable content
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Group name: creator can tap to edit; participants view only
+                    GestureDetector(
+                      onTap: _isCreator ? _editName : null,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+                        child: Row(
+                          children: [
+                            CircleAvatar(radius: 28, backgroundColor: const Color(0xFF667eea), child: const Icon(Icons.group, color: Colors.white, size: 32)),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(_currentName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 2),
+                                  Text('${_members.length} participants', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                                  if (_isCreator) Text('Tap to edit name', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                            if (_isCreator) const Icon(Icons.edit, size: 20, color: Color(0xFF667eea)),
+                          ],
                         ),
-                        Text(
-                          '${_members.length} participants',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Participants',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF667eea),
+                    if (_isCreator) ...[
+                      const SizedBox(height: 12),
+                      ListTile(
+                        leading: const Icon(Icons.person_add, color: Color(0xFF667eea)),
+                        title: const Text('Add participants'),
+                        onTap: _addParticipants,
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    const Align(alignment: Alignment.centerLeft, child: Text('Participants', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF667eea)))),
+                    const SizedBox(height: 8),
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _members.length,
+                            itemBuilder: (context, index) {
+                              final member = _members[index];
+                              final uid = member['user_id']?.toString() ?? '';
+                              final name = member['full_name']?.toString() ?? member['username'] ?? '?';
+                              // Students: Class & Section; Teachers: Subject
+                              final sub = _memberSubtext(member);
+                              final canRemove = _isCreator && uid != widget.currentUserId;
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.grey[300],
+                                  child: Text((name.isNotEmpty ? name[0] : '?').toUpperCase(), style: const TextStyle(color: Colors.black87)),
+                                ),
+                                title: Text(name),
+                                subtitle: sub.isNotEmpty ? Text(sub, style: TextStyle(fontSize: 12, color: Colors.grey[600])) : null,
+                                trailing: canRemove
+                                    ? IconButton(
+                                        icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 22),
+                                        onPressed: () => _removeMember(uid, name),
+                                      )
+                                    : null,
+                              );
+                            },
+                          ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: _members.length,
-                      itemBuilder: (context, index) {
-                        final member = _members[index];
-                        // Build name
-                        String name = '';
-                        final firstName = member['first_name'];
-                        final lastName = member['last_name'];
-                        
-                        if (firstName != null && firstName.toString().toLowerCase() != 'null' && firstName.toString().toLowerCase() != 'none') {
-                          name = firstName.toString();
-                        }
-                        if (lastName != null && lastName.toString().toLowerCase() != 'null' && lastName.toString().toLowerCase() != 'none') {
-                          if (name.isNotEmpty) name += ' ';
-                          name += lastName.toString();
-                        }
-                        
-                        if (name.isEmpty) {
-                          final fullName = member['full_name'];
-                          if (fullName != null && fullName.toString().toLowerCase() != 'null' && fullName.toString().toLowerCase() != 'none') {
-                            name = fullName.toString();
-                          } else {
-                            name = member['username'] ?? 'Unknown';
-                          }
-                        }
-                        
-                        final className = member['class_name'];
-                        final section = member['section'];
-                        final grade = member['grade'];
-                        
-                         final role = member['role']?.toString().toLowerCase() ?? '';
-                         final subject = member['subject']?.toString();
-
-                          String sub = '';
-                          Color? subColor;
-
-                          // Check if member is a teacher
-                          if (role.contains('teacher') || (subject != null && subject.toLowerCase() != 'null' && subject.isNotEmpty)) {
-                            sub = 'Teacher';
-                            if (subject != null && subject.toLowerCase() != 'null' && subject.isNotEmpty) {
-                              sub += ': $subject';
-                            }
-                            subColor = Colors.green[700];
-                          } else {
-                             // Student
-                             if (grade != null && grade.toString().toLowerCase() != 'null') sub = grade.toString();
-                             else if (className != null && className.toString().toLowerCase() != 'null') sub = className.toString();
-                             
-                             if (section != null && section.toString().toLowerCase() != 'null') {
-                               if (sub.isNotEmpty) sub += ' - $section';
-                               else sub = section.toString();
-                             }
-                             subColor = Colors.blue[700];
-                          }
-                        
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.grey[200],
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : '?',
-                              style: TextStyle(color: Colors.grey[800]),
-                            ),
-                          ),
-                          title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                          subtitle: sub.isNotEmpty 
-                            ? Text(sub, style: TextStyle(color: subColor, fontSize: 12))
-                            : null,
-                        );
-                      },
-                    ),
             ),
           ],
         ),
@@ -2634,3 +3007,63 @@ class _GroupInfoDialogState extends State<GroupInfoDialog> {
     );
   }
 }
+
+class _AddMembersSheetStudent extends StatefulWidget {
+  final List<dynamic> users;
+
+  const _AddMembersSheetStudent({required this.users});
+
+  @override
+  State<_AddMembersSheetStudent> createState() => _AddMembersSheetStudentState();
+}
+
+class _AddMembersSheetStudentState extends State<_AddMembersSheetStudent> {
+  final Set<String> _selected = {};
+
+  String _subtext(dynamic u) {
+    final role = u['role']?.toString() ?? '';
+    if (role == 'student_parent') {
+      final cn = u['class_name']?.toString();
+      final sec = u['section']?.toString();
+      if (cn != null && cn.isNotEmpty) return 'Class $cn${sec != null && sec.isNotEmpty ? ' - $sec' : ''}';
+    } else if (role == 'teacher') {
+      final sub = u['subject']?.toString();
+      if (sub != null && sub.isNotEmpty) return sub;
+    }
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add participants'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: widget.users.length,
+          itemBuilder: (ctx, i) {
+            final u = widget.users[i] as Map<String, dynamic>;
+            final uid = u['user_id']?.toString() ?? '';
+            final name = u['full_name']?.toString() ?? u['username'] ?? '?';
+            final sub = _subtext(u);
+            final isSelected = _selected.contains(uid);
+            return CheckboxListTile(
+              value: isSelected,
+              onChanged: (v) => setState(() {
+                if (v == true) _selected.add(uid); else _selected.remove(uid);
+              }),
+              title: Text(name),
+              subtitle: sub.isNotEmpty ? Text(sub, style: TextStyle(fontSize: 12, color: Colors.grey[600])) : null,
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context, _selected.toList()), child: const Text('Add')),
+      ],
+    );
+  }
+}
+

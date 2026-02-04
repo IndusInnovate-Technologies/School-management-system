@@ -59,6 +59,77 @@ class ApiService {
     return await _getAuthHeaders();
   }
 
+  /// Register FCM token for push notifications (call after login)
+  static Future<bool> registerFcmToken(String token, String platform) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final uri = Uri.parse('$baseUrl/auth/fcm/register/');
+      final resp = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode({'token': token, 'platform': platform}),
+      ).timeout(const Duration(seconds: 15));
+      return resp.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error registering FCM token: $e');
+      return false;
+    }
+  }
+
+  /// Unregister FCM token (e.g. on logout)
+  static Future<bool> unregisterFcmToken(String token) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final uri = Uri.parse('$baseUrl/auth/fcm/unregister/');
+      final resp = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode({'token': token}),
+      ).timeout(const Duration(seconds: 10));
+      return resp.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error unregistering FCM token: $e');
+      return false;
+    }
+  }
+
+  /// Fetch my push notifications (for teacher portal) - returns list and unread count
+  static Future<Map<String, dynamic>> getMyPushNotifications() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.get(
+        Uri.parse('$baseUrl/auth/my-push-notifications/'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 15));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return {
+          'notifications': data['notifications'] is List ? List<Map<String, dynamic>>.from(data['notifications'] as List) : <Map<String, dynamic>>[],
+          'unread_count': data['unread_count'] is int ? data['unread_count'] as int : 0,
+        };
+      }
+    } catch (e) {
+      debugPrint('Error fetching my push notifications: $e');
+    }
+    return {'notifications': <Map<String, dynamic>>[], 'unread_count': 0};
+  }
+
+  /// Mark my push notifications as read (resets unread count)
+  static Future<bool> markMyPushNotificationsRead() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.post(
+        Uri.parse('$baseUrl/auth/my-push-notifications/mark-read/'),
+        headers: headers,
+        body: jsonEncode({}),
+      ).timeout(const Duration(seconds: 10));
+      return resp.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error marking push notifications read: $e');
+      return false;
+    }
+  }
+
   static Future<List<dynamic>> fetchStudents() async {
     try {
       final headers = await _getAuthHeaders();
@@ -416,7 +487,7 @@ class ApiService {
     try {
       final headers = await _getAuthHeaders();
       final resp = await http
-          .post(Uri.parse('http://127.0.0.1:8000/api/student-parent/groups/$groupId/mark_read/'), headers: headers)
+          .post(Uri.parse('$baseUrl/student-parent/chat-groups/$groupId/mark_read/'), headers: headers)
           .timeout(const Duration(seconds: 5));
       return resp.statusCode == 200;
     } catch (e) {
@@ -424,14 +495,15 @@ class ApiService {
     }
   }
 
-  static Future<bool> markConversationRead(String userId) async {
+  /// Mark 1-to-1 conversation as read (backend expects other_user_id)
+  static Future<bool> markConversationRead(String otherUserId) async {
     try {
       final headers = await _getAuthHeaders();
       final resp = await http
           .post(
-            Uri.parse('http://127.0.0.1:8000/api/student-parent/conversations/mark_read/'), 
+            Uri.parse('$baseUrl/student-parent/conversations/mark_read/'),
             headers: headers,
-            body: jsonEncode({'sender_id': userId}),
+            body: jsonEncode({'other_user_id': otherUserId}),
           )
           .timeout(const Duration(seconds: 5));
       return resp.statusCode == 200;
@@ -457,13 +529,31 @@ class ApiService {
     }
   }
 
-  static Future<List<dynamic>> getGroupMembers(String groupId) async {
+  static Future<Map<String, dynamic>?> getGroupDetails(String groupId) async {
     try {
       final headers = await _getAuthHeaders();
-      // Assuming groups endpoint returns members in detail view
-      final resp = await http.get(Uri.parse('http://127.0.0.1:8000/api/student-parent/groups/$groupId/'), headers: headers);
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body);
+      final resp = await http.get(Uri.parse('http://127.0.0.1:8000/api/student-parent/chat-groups/$groupId/get_members/'), headers: headers);
+      if (resp.statusCode == 200) return jsonDecode(resp.body) as Map<String, dynamic>;
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<bool> deleteGroup(String groupId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.delete(Uri.parse('http://127.0.0.1:8000/api/student-parent/chat-groups/$groupId/'), headers: headers);
+      return resp.statusCode == 204 || resp.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<List<dynamic>> getGroupMembers(String groupId) async {
+    try {
+      final data = await getGroupDetails(groupId);
+      if (data != null && data.containsKey('members')) {
         return data['members'] as List? ?? [];
       }
       return [];
@@ -476,7 +566,7 @@ class ApiService {
     try {
       final headers = await _getAuthHeaders();
       final resp = await http.patch(
-        Uri.parse('http://127.0.0.1:8000/api/student-parent/groups/$groupId/'),
+        Uri.parse('http://127.0.0.1:8000/api/student-parent/chat-groups/$groupId/'),
         headers: headers,
         body: jsonEncode({'name': name}),
       );
@@ -490,9 +580,37 @@ class ApiService {
     try {
       final headers = await _getAuthHeaders();
       final resp = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/student-parent/groups/$groupId/remove_member/'),
+        Uri.parse('http://127.0.0.1:8000/api/student-parent/chat-groups/$groupId/remove_members/'),
         headers: headers,
-        body: jsonEncode({'user_id': userId}),
+        body: jsonEncode({'member_ids': [userId]}),
+      );
+      return resp.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<List<dynamic>> getAddableGroupMembers(String groupId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.get(Uri.parse('http://127.0.0.1:8000/api/student-parent/chat-groups/$groupId/list_addable_members/'), headers: headers);
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        return data['users'] as List<dynamic>? ?? [];
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<bool> addGroupMembers(String groupId, List<String> userIds) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final resp = await http.post(
+        Uri.parse('http://127.0.0.1:8000/api/student-parent/chat-groups/$groupId/add_members/'),
+        headers: headers,
+        body: jsonEncode({'member_ids': userIds}),
       );
       return resp.statusCode == 200;
     } catch (e) {
@@ -613,10 +731,8 @@ class ApiService {
         request.fields['recipient'] = recipient;
         debugPrint('Added field: recipient = $recipient');
       }
-      if (messageText != null && messageText.isNotEmpty) {
-        request.fields['message_text'] = messageText;
-        debugPrint('Added field: message_text = $messageText');
-      }
+      request.fields['message_text'] = messageText ?? ''; // Always send (empty for attachment-only)
+      debugPrint('Added field: message_text = ${messageText ?? "(empty)"}');
       if (groupId != null && groupId.isNotEmpty) {
         request.fields['group_id'] = groupId;
         debugPrint('Added field: group_id = $groupId');
@@ -625,10 +741,34 @@ class ApiService {
         request.fields['recipient_id'] = otherUserId;
         debugPrint('Added field: recipient_id = $otherUserId');
       }
-      if (repliedTo != null) {
-        request.fields['reply_to'] = repliedTo;
-        debugPrint('Added field: reply_to = $repliedTo');
+      if (repliedTo != null && repliedTo.isNotEmpty) {
+        request.fields['replied_to'] = repliedTo;
+        debugPrint('Added field: replied_to = $repliedTo');
       }
+      
+      // Only set message_type to image/file/video if a file is actually attached
+      // If no file is attached, force message_type to 'text'
+      String finalMessageType = 'text';
+      if (fileBytes != null || (filePath != null && filePath.isNotEmpty)) {
+        // Auto-detect type from filename if available
+        if (fileName != null) {
+          final ext = fileName.toLowerCase().split('.').last;
+          if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(ext)) {
+            finalMessageType = 'image';
+          } else if (['mp4', 'avi', 'mov', 'mkv'].contains(ext)) {
+            finalMessageType = 'video';
+          } else {
+            finalMessageType = 'file';
+          }
+        } else {
+          finalMessageType = 'file';
+        }
+      } else {
+        // No file attached, must be text message
+        finalMessageType = 'text';
+      }
+      request.fields['message_type'] = finalMessageType;
+      debugPrint('Added field: message_type = $finalMessageType');
       
       // Handle File
       if (fileBytes != null && fileName != null) {
@@ -648,6 +788,8 @@ class ApiService {
         ));
         debugPrint('Added file from path: $filePath');
       }
+      
+      debugPrint('Request files count: ${request.files.length}');
 
       debugPrint('Sending request to backend...');
       final streamedResponse = await request.send();

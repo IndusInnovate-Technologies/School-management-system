@@ -21,6 +21,8 @@ router.register(r'tasks', views.StudentTaskViewSet, basename='task')
 
 urlpatterns = [
     path('student-profile/', views.student_profile, name='student-profile'),
+    path('bus-details/', views.bus_details, name='bus-details'),
+    path('bus-attendance/', views.bus_attendance, name='bus-attendance'),
     path('school-details/', views.school_details, name='school-details'),
     # Custom paths for chat endpoints to match frontend expectations
     path('conversations/', views.ChatMessageViewSet.as_view({'get': 'conversations'}), name='conversations'),

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:core/api/endpoints.dart';
 import 'admin_login.dart';
 import 'management_login.dart';
 import 'teacher_login.dart';
 import 'parent_login.dart';
 import 'splash_screen.dart';
+import 'src/api_host_stub.dart' if (dart.library.io) 'src/api_host_io.dart' as api_host;
 
 void main() {
+  // Use 10.0.2.2 on Android emulator so the app can reach the backend on the host
+  Endpoints.baseUrl = 'http://${api_host.getApiHost()}:8000/api';
   runApp(const SchoolApp());
 }
 
@@ -106,21 +110,29 @@ class _LoginScreenState extends State<LoginScreen> {
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 26, color: active ? Colors.white : Colors.black87),
-                  const SizedBox(height: 10),
+                  Icon(icon, size: 24, color: active ? Colors.white : Colors.black87),
+                  const SizedBox(height: 6),
                   Text(
                     title,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: active ? Colors.white : Colors.black,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: active ? Colors.white70 : Colors.black54,
                     ),
                   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:main_login/main.dart' as main_login;
 import 'package:core/api/api_service.dart';
 import 'package:core/api/endpoints.dart';
@@ -385,12 +386,16 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final showSidebar = constraints.maxWidth >= 1100;
+        // Check if Android platform
+        final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+        // For desktop, use width-based check; for Android, always show drawer
+        final showSidebar = !isAndroid && constraints.maxWidth >= 1100;
+        final showDrawer = isAndroid || (!isAndroid && constraints.maxWidth < 1100);
+        
         return Scaffold(
           key: _scaffoldKey,
-          drawer: showSidebar
-              ? null
-              : Drawer(
+          drawer: showDrawer
+              ? Drawer(
                   child: SizedBox(
                     width: 280,
                     child: ManagementSidebar(
@@ -398,25 +403,20 @@ class _DashboardPageState extends State<DashboardPage> {
                       activeRoute: '/dashboard',
                     ),
                   ),
-                ),
-          body: Row(
-            children: [
-              if (showSidebar)
-                ManagementSidebar(
-                  gradient: gradient,
-                  activeRoute: '/dashboard',
-                ),
-              Expanded(
-                child: Container(
+                )
+              : null,
+          body: isAndroid
+              ? Container(
                   color: const Color(0xFFF5F6FA),
                   child: SafeArea(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(12),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           _Header(
-                            showMenuButton: !showSidebar,
+                            showMenuButton: showDrawer,
                             onMenuTap: () =>
                                 _scaffoldKey.currentState?.openDrawer(),
                             onLogout: () {
@@ -449,13 +449,117 @@ class _DashboardPageState extends State<DashboardPage> {
                               );
                             },
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 12),
                           _StatsGrid(
                             onNavigate: (section) {
                               _navigateToRoute('/$section');
                             },
+                            isAndroid: isAndroid,
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 12),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _RecentTeachersSection(
+                                teachers: _recentTeachers,
+                              ),
+                              const SizedBox(height: 12),
+                              _RecentStudentsSection(
+                                students: _recentStudents,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _AnalyticsSection(),
+                          const SizedBox(height: 12),
+                          _RecentActivitiesSection(
+                            activities: _recentActivities,
+                          ),
+                          const SizedBox(height: 12),
+                          _RecentNotificationsSection(
+                            notifications: _recentNotifications,
+                          ),
+                          const SizedBox(height: 12),
+                          _RecentAwardsSection(
+                            awards: _recentAwards,
+                          ),
+                          const SizedBox(height: 12),
+                          _GallerySection(
+                            galleryItems: _galleryItems,
+                            onItemTap: (item) => _showImageDialog(context, item),
+                          ),
+                          const SizedBox(height: 12),
+                          _RecentAdmissionsSection(
+                            admissions: _recentAdmissions,
+                          ),
+                          const SizedBox(height: 12),
+                          _RTISection(
+                            rtiRequests: _rtiRequests,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              : Row(
+                  children: [
+                    if (showSidebar)
+                      ManagementSidebar(
+                        gradient: gradient,
+                        activeRoute: '/dashboard',
+                      ),
+                    Expanded(
+                      child: Container(
+                        color: const Color(0xFFF5F6FA),
+                        child: SafeArea(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                          _Header(
+                            showMenuButton: showDrawer,
+                            onMenuTap: () =>
+                                _scaffoldKey.currentState?.openDrawer(),
+                            onLogout: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Logout'),
+                                  content: const Text('Are you sure you want to logout?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        // Navigate to main login page
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => const main_login.LoginScreen(),
+                                          ),
+                                          (route) => false,
+                                        );
+                                      },
+                                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          SizedBox(height: isAndroid ? 16 : 24),
+                          _StatsGrid(
+                            onNavigate: (section) {
+                              _navigateToRoute('/$section');
+                            },
+                            isAndroid: isAndroid,
+                          ),
+                          SizedBox(height: isAndroid ? 16 : 24),
                           LayoutBuilder(
                             builder: (context, inner) {
                               final stacked = inner.maxWidth < 800;
@@ -541,15 +645,17 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+    
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isAndroid ? 16 : 20),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(isAndroid ? 12 : 15),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
+            blurRadius: isAndroid ? 12 : 20,
             offset: const Offset(0, 5),
           ),
         ],
@@ -562,12 +668,16 @@ class _Header extends StatelessWidget {
               if (showMenuButton)
                 IconButton(
                   onPressed: onMenuTap,
-                  icon: const Icon(Icons.menu, color: Colors.black87),
+                  icon: Icon(
+                    Icons.menu,
+                    color: Colors.black87,
+                    size: isAndroid ? 24 : 28,
+                  ),
                 ),
-              const Text(
+              Text(
                 'Management Dashboard',
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: isAndroid ? 20 : 28,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                 ),
@@ -625,8 +735,12 @@ class _Header extends StatelessWidget {
 
 class _StatsGrid extends StatefulWidget {
   final ValueChanged<String> onNavigate;
+  final bool isAndroid;
 
-  const _StatsGrid({required this.onNavigate});
+  const _StatsGrid({
+    required this.onNavigate,
+    this.isAndroid = false,
+  });
 
   @override
   State<_StatsGrid> createState() => _StatsGridState();
@@ -672,7 +786,7 @@ class _StatsGridState extends State<_StatsGrid> {
       fetchCount('buses', Endpoints.buses),
       fetchCount('examinations', Endpoints.examinations),
       fetchCount('fees', Endpoints.fees),
-      fetchCount('notifications', Endpoints.notifications),
+      fetchCount('notifications', Endpoints.pushNotificationLogs),
       fetchCount('activities', Endpoints.activities),
       fetchCount('bus_routes', Endpoints.busRoutes),
       fetchCount('events', Endpoints.events),
@@ -827,25 +941,50 @@ class _StatsGridState extends State<_StatsGrid> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Validate constraints - ensure they're bounded
+        // Use MediaQuery as fallback if constraints are invalid
+        final screenWidth = MediaQuery.of(context).size.width;
+        final validWidth = constraints.maxWidth.isInfinite || constraints.maxWidth <= 0
+            ? screenWidth
+            : constraints.maxWidth;
+        
         // Calculate responsive columns based on screen width
         int crossAxisCount;
         double childAspectRatio;
+        double crossAxisSpacing;
+        double mainAxisSpacing;
         
-        if (constraints.maxWidth > 1600) {
-          crossAxisCount = 6;
-          childAspectRatio = 1.4;
-        } else if (constraints.maxWidth > 1200) {
-          crossAxisCount = 4;
-          childAspectRatio = 1.4;
-        } else if (constraints.maxWidth > 900) {
-          crossAxisCount = 3;
-          childAspectRatio = 1.4;
-        } else if (constraints.maxWidth > 600) {
+        if (widget.isAndroid) {
+          // Android-specific layout - 2 columns with optimized spacing
           crossAxisCount = 2;
-          childAspectRatio = 1.3;
+          // Use a more conservative aspect ratio for Android - taller cards to prevent overflow
+          // Calculate based on available width to ensure cards are tall enough
+          final cardWidth = (validWidth - 8) / 2;
+          final minCardHeight = 120.0; // Minimum height to prevent overflow
+          childAspectRatio = (cardWidth / minCardHeight).clamp(0.85, 1.0);
+          crossAxisSpacing = 8; // Further reduced spacing for Android
+          mainAxisSpacing = 8;
         } else {
-          crossAxisCount = 1;
-          childAspectRatio = 1.5;
+          // Desktop layout - existing logic
+          final width = validWidth;
+          if (width > 1600) {
+            crossAxisCount = 6;
+            childAspectRatio = 1.4;
+          } else if (width > 1200) {
+            crossAxisCount = 4;
+            childAspectRatio = 1.4;
+          } else if (width > 900) {
+            crossAxisCount = 3;
+            childAspectRatio = 1.4;
+          } else if (width > 600) {
+            crossAxisCount = 2;
+            childAspectRatio = 1.3;
+          } else {
+            crossAxisCount = 1;
+            childAspectRatio = 1.5;
+          }
+          crossAxisSpacing = 20;
+          mainAxisSpacing = 15;
         }
 
         return GridView.builder(
@@ -853,8 +992,8 @@ class _StatsGridState extends State<_StatsGrid> {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 15,
+            crossAxisSpacing: crossAxisSpacing,
+            mainAxisSpacing: mainAxisSpacing,
             childAspectRatio: childAspectRatio,
           ),
           itemCount: stats.length,
@@ -869,6 +1008,7 @@ class _StatsGridState extends State<_StatsGrid> {
               onTap: stat['route'] != null
                   ? () => widget.onNavigate(stat['route'] as String)
                   : null,
+              isAndroid: widget.isAndroid,
             );
           },
         );
@@ -884,6 +1024,7 @@ class _StatCard extends StatefulWidget {
   final String description;
   final Color color;
   final VoidCallback? onTap;
+  final bool isAndroid;
 
   const _StatCard({
     required this.icon,
@@ -892,6 +1033,7 @@ class _StatCard extends StatefulWidget {
     required this.description,
     required this.color,
     this.onTap,
+    this.isAndroid = false,
   });
 
   @override
@@ -904,33 +1046,42 @@ class _StatCardState extends State<_StatCard> {
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          transform: Matrix4.identity()
-            ..translate(0.0, _isHovered ? -8.0 : 0.0),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(15),
-            border: Border(
-              left: BorderSide(color: widget.color, width: 5),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.1),
-                blurRadius: _isHovered ? 16 : 12,
-                offset: Offset(0, _isHovered ? 6 : 4),
+          cursor: widget.isAndroid ? SystemMouseCursors.basic : SystemMouseCursors.click,
+          onEnter: (_) {
+            if (!widget.isAndroid) setState(() => _isHovered = true);
+          },
+          onExit: (_) {
+            if (!widget.isAndroid) setState(() => _isHovered = false);
+          },
+          child: GestureDetector(
+            onTap: widget.onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              transform: Matrix4.identity()
+                ..translate(0.0, (!widget.isAndroid && _isHovered) ? -8.0 : 0.0),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(widget.isAndroid ? 12 : 15),
+                border: Border(
+                  left: BorderSide(
+                    color: widget.color,
+                    width: widget.isAndroid ? 4 : 5,
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: (!widget.isAndroid && _isHovered) ? 0.15 : 0.1,
+                    ),
+                    blurRadius: (!widget.isAndroid && _isHovered) ? 16 : 12,
+                    offset: Offset(0, (!widget.isAndroid && _isHovered) ? 6 : 4),
+                  ),
+                ],
               ),
-            ],
-          ),
           child: Stack(
             children: [
-              if (_isHovered)
+              if (!widget.isAndroid && _isHovered)
                 Positioned(
                   top: 0,
                   left: 5,
@@ -948,52 +1099,73 @@ class _StatCardState extends State<_StatCard> {
                         begin: Alignment.topLeft,
                         end: Alignment.topRight,
                       ),
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(15),
+                      borderRadius: BorderRadius.only(
+                        topRight: Radius.circular(widget.isAndroid ? 12 : 15),
                       ),
                     ),
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.all(12),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.icon,
-                      style: const TextStyle(fontSize: 32),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      widget.number,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                padding: EdgeInsets.all(widget.isAndroid ? 10 : 16),
+                child: LayoutBuilder(
+                  builder: (context, cardConstraints) {
+                    return FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.center,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: cardConstraints.maxHeight * 0.95,
+                          maxWidth: cardConstraints.maxWidth * 0.95,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              widget.icon,
+                              style: TextStyle(
+                                fontSize: widget.isAndroid ? 24 : 32,
+                              ),
+                            ),
+                            SizedBox(height: widget.isAndroid ? 6 : 10),
+                            Text(
+                              widget.number,
+                              style: TextStyle(
+                                fontSize: widget.isAndroid ? 22 : 28,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            SizedBox(height: widget.isAndroid ? 2 : 4),
+                            Text(
+                              widget.label,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: widget.isAndroid ? 12 : 14,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            SizedBox(height: widget.isAndroid ? 1 : 6),
+                            Text(
+                              widget.description,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: widget.isAndroid ? 9 : 11,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.label,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 13,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      widget.description,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
+                    );
+                  },
                 ),
               ),
             ],

@@ -243,19 +243,26 @@ class ChatMessageSerializer(SchoolIdMixin, serializers.ModelSerializer):
     group_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     attachment_url = serializers.SerializerMethodField()
     attachment_size_mb = serializers.SerializerMethodField()
+    sender_name = serializers.SerializerMethodField()
+    replied_to_id = serializers.SerializerMethodField()
+    replied_to_sender_name = serializers.SerializerMethodField()
+    replied_to_text = serializers.SerializerMethodField()
     
     class Meta:
         model = ChatMessage
         fields = [
             'message_id', 'school_id', 'school_name', 'sender', 'recipient', 'group', 'group_id',
-            'replied_to', 'message_type', 'message_text', 'attachment', 'attachment_url',
+            'sender_name', 'replied_to', 'replied_to_id', 'replied_to_sender_name', 'replied_to_text',
+            'message_type', 'message_text', 'attachment', 'attachment_url',
             'attachment_name', 'attachment_size', 'attachment_size_mb',
             'attachment_type', 'is_read', 'read_at', 'is_deleted', 'deleted_at',
+            'is_edited', 'edited_at',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
             'message_id', 'school_id', 'school_name', 'created_at', 'updated_at',
-            'attachment_url', 'attachment_size_mb', 'read_at', 'deleted_at'
+            'attachment_url', 'attachment_size_mb', 'read_at', 'deleted_at',
+            'is_edited', 'edited_at'
         ]
     
     def get_attachment_url(self, obj):
@@ -273,23 +280,62 @@ class ChatMessageSerializer(SchoolIdMixin, serializers.ModelSerializer):
             return round(obj.attachment_size / (1024 * 1024), 2)
         return None
     
+    def get_sender_name(self, obj):
+        """Display name for sender (for groups and reply display)"""
+        if not obj.sender:
+            return None
+        name = f"{obj.sender.first_name or ''} {obj.sender.last_name or ''}".strip()
+        return name or obj.sender.username
+    
+    def get_replied_to_id(self, obj):
+        if not obj.replied_to:
+            return None
+        return str(obj.replied_to.message_id)
+    
+    def get_replied_to_sender_name(self, obj):
+        if not obj.replied_to or not obj.replied_to.sender:
+            return None
+        s = obj.replied_to.sender
+        name = f"{s.first_name or ''} {s.last_name or ''}".strip()
+        return name or s.username
+    
+    def get_replied_to_text(self, obj):
+        if not obj.replied_to:
+            return None
+        if obj.replied_to.is_deleted:
+            return 'This message was deleted'
+        return obj.replied_to.message_text or (f"[{obj.replied_to.attachment_name}]" if obj.replied_to.attachment_name else '[Attachment]')
+    
     def validate(self, data):
-        """Validate message content based on message type"""
+        """Validate message content based on message type. Attachment may be in request.FILES (multipart)."""
         message_type = data.get('message_type', 'text')
         message_text = data.get('message_text')
-        attachment = data.get('attachment')
-        
-        if message_type == 'text' and not message_text and not self.instance:
+        # Multipart: file is often in request.FILES, not in request.data
+        request = self.context.get('request')
+        attachment = data.get('attachment') or (request.FILES.get('attachment') if request else None)
+
+        # Allow empty message_text when attachment is present (image/file-only messages)
+        if message_type == 'text' and not message_text and not attachment and not self.instance:
             raise serializers.ValidationError({
                 'message_text': 'Text messages must have message_text content'
             })
-        
+
         if message_type in ['image', 'file', 'video'] and not attachment and not self.instance:
             raise serializers.ValidationError({
                 'attachment': f'{message_type.capitalize()} messages must have an attachment'
             })
-        
+
         return data
+
+    def to_representation(self, instance):
+        """Handle deleted message text placeholder"""
+        ret = super().to_representation(instance)
+        if instance.is_deleted:
+            ret['message_text'] = 'This message was deleted'
+            ret['attachment'] = None
+            ret['attachment_url'] = None
+            ret['attachment_name'] = None
+        return ret
 
 
 class StudentProjectViewSerializer(serializers.ModelSerializer):

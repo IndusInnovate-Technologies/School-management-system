@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core.mail import send_mail
 import random
-from .models import Role
+from .models import Role, FCMDevice, UserNotificationSeen
 from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -246,6 +246,18 @@ def get_role_routes(request):
             'dashboard_route': '/student-parent/dashboard',
             'api_base': '/api/student-parent/',
         },
+        'driver': {
+            'login_page': '/driver_login',
+            'login_file': 'driver_login.dart',
+            'dashboard_route': '/driver/dashboard',
+            'api_base': '/api/driver/',
+        },
+        'financial': {
+            'login_page': '/financial_login',
+            'login_file': 'financial_login.dart',
+            'dashboard_route': '/management-admin/fees',
+            'api_base': '/api/management-admin/',
+        },
     }
     
     role = request.query_params.get('role', '').lower()
@@ -364,6 +376,7 @@ def role_login(request):
                 'teacher': 'teacher',
                 'parent': 'student_parent',
                 'financial': 'financial',
+                'driver': 'driver',
             }
             
             backend_role = role_mapping.get(requested_role, requested_role)
@@ -375,7 +388,10 @@ def role_login(request):
                     current_role_name = user.role.name
                 except Exception:
                     current_role_name = "Unknown"
-            
+
+            # Normalize driver_bus to driver (role should be "driver" only)
+            if current_role_name == 'driver_bus':
+                current_role_name = 'driver'
 
             # Verify user has the correct role
             if user.role and current_role_name == backend_role:
@@ -408,6 +424,10 @@ def role_login(request):
                         'financial': {
                             'login_page': '/financial_login',
                             'dashboard_route': '/management-admin/fees',
+                        },
+                        'driver': {
+                            'login_page': '/driver_login',
+                            'dashboard_route': '/driver/dashboard',
                         },
                     }
                     
@@ -674,3 +694,133 @@ class FinancialUserListView(generics.ListAPIView):
         # Filter by school_id if available in request user or params
         # This assumes User model might have school_id or we filter by context
         return queryset
+
+
+# -------------------------
+# FCM Push Notification (register/unregister device tokens)
+# -------------------------
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def fcm_register(request):
+    """Register FCM token for current user (Android/iOS). Call after login."""
+    token = (request.data.get('token') or request.data.get('fcm_token') or '').strip()
+    platform = (request.data.get('platform') or 'android').lower()
+    if platform not in ('android', 'ios'):
+        platform = 'android'
+    if not token:
+        return Response({'error': 'token is required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        device, created = FCMDevice.objects.update_or_create(
+            token=token,
+            defaults={'user': request.user, 'platform': platform}
+        )
+        return Response({
+            'message': 'FCM token registered',
+            'created': created,
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.exception('FCM register failed: %s', e)
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def fcm_unregister(request):
+    """Remove FCM token (e.g. on logout)."""
+    token = (request.data.get('token') or request.data.get('fcm_token') or '').strip()
+    if not token:
+        return Response({'error': 'token is required'}, status=status.HTTP_400_BAD_REQUEST)
+    deleted, _ = FCMDevice.objects.filter(token=token, user=request.user).delete()
+    return Response({
+        'message': 'FCM token removed',
+        'deleted': deleted,
+    }, status=status.HTTP_200_OK)
+
+
+# -------------------------
+# My push notifications (for student/parent and teacher portals)
+# -------------------------
+
+def _get_notification_audience(user):
+    """Return list of audience values relevant to this user (for filtering PushNotificationLog)."""
+    from management_admin.models import Teacher
+    from student_parent.models import Parent
+    if Teacher.objects.filter(user=user).exists():
+        return ['all_teachers', 'both']
+    if Parent.objects.filter(user=user).exists():
+        return ['all_students', 'both']
+    # Student (user linked to Student)
+    from management_admin.models import Student
+    if Student.objects.filter(user=user).exists():
+        return ['all_students', 'both']
+    return ['both']
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def my_push_notifications(request):
+    """List push notifications for the current user (by audience + school) and unread count."""
+    from .utils import get_user_school_id
+    from management_admin.models import PushNotificationLog
+
+    school_id = get_user_school_id(request.user)
+    if not school_id:
+        return Response({'notifications': [], 'unread_count': 0}, status=status.HTTP_200_OK)
+
+    audience_list = _get_notification_audience(request.user)
+    from django.utils import timezone as tz
+    from datetime import timedelta
+    since = tz.now() - timedelta(days=1)
+
+    logs_list = list(
+        PushNotificationLog.objects.filter(
+            school_id=school_id,
+            audience__in=audience_list,
+            created_at__gte=since,
+        ).order_by('-created_at')[:50]
+    )
+
+    try:
+        last_seen = request.user.notification_seen.last_seen_at
+    except Exception:
+        last_seen = None
+
+    unread_count = 0
+    if last_seen:
+        for log in logs_list:
+            created = log.created_at
+            if created and tz.is_naive(created):
+                created = tz.make_aware(created)
+            if created and last_seen and created > last_seen:
+                unread_count += 1
+    else:
+        unread_count = len(logs_list)
+
+    notifications = [
+        {
+            'id': log.id,
+            'title': log.title,
+            'body': log.body,
+            'audience': log.audience,
+            'created_at': log.created_at.isoformat() if log.created_at else None,
+        }
+        for log in logs_list
+    ]
+
+    return Response({
+        'notifications': notifications,
+        'unread_count': unread_count,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def my_push_notifications_mark_read(request):
+    """Mark push notifications as read for the current user (resets unread count)."""
+    from django.utils import timezone
+    UserNotificationSeen.objects.update_or_create(
+        user=request.user,
+        defaults={'last_seen_at': timezone.now()},
+    )
+    return Response({'message': 'Marked as read'}, status=status.HTTP_200_OK)

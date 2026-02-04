@@ -956,6 +956,7 @@ class Bus(models.Model):
     capacity = models.IntegerField(validators=[MinValueValidator(1)], help_text='Passenger capacity of the bus')
     registration_number = models.CharField(max_length=100, unique=True, help_text='Vehicle registration number')
     driver_name = models.CharField(max_length=255, help_text='Full name of the driver')
+    driver_email = models.EmailField(max_length=254, blank=True, help_text='Driver login email; credentials created so driver can log in and see this bus')
     driver_phone = models.CharField(max_length=20, help_text='Driver contact phone number')
     driver_license = models.CharField(max_length=100, help_text='Driver license number')
     driver_experience = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)], help_text='Years of driving experience')
@@ -993,6 +994,7 @@ class BusStop(models.Model):
     school_name = models.CharField(max_length=255, null=True, blank=True, editable=False, help_text='School name (read-only, auto-populated from schools table)')
     stop_name = models.CharField(max_length=255, help_text='Name of the bus stop')
     stop_address = models.TextField(blank=True, help_text='Address of the bus stop')
+    notes = models.TextField(blank=True, help_text='Driver notes for this stop (e.g. gate code, landmarks)')
     stop_time = models.TimeField(blank=True, null=True, help_text='Time when bus arrives at this stop')
     route_type = models.CharField(
         max_length=20,
@@ -1072,70 +1074,56 @@ class BusStopStudent(models.Model):
             if not self.school_name or self.school_name != self.bus_stop.bus.school.school_name:
                 self.school_name = self.bus_stop.bus.school.school_name
         
-        # Auto-set pickup_time and dropoff_time based on stop's route_type and stop_time
+        # Auto-set pickup_time and dropoff_time from stop times so they always match bus creation/update
         if self.bus_stop and self.bus_stop.stop_time:
             if self.bus_stop.route_type == 'morning':
-                # For morning stops, set pickup_time from stop's stop_time
-                if not self.pickup_time:
-                    self.pickup_time = self.bus_stop.stop_time
-                
-                # Also check if there's a corresponding afternoon stop with same stop_name
-                # and update its dropoff_time if this student is assigned there
+                # Morning stop: pickup = this stop's time, dropoff = corresponding afternoon stop's time
+                self.pickup_time = self.bus_stop.stop_time
                 try:
                     corresponding_afternoon_stop = BusStop.objects.filter(
                         bus=self.bus_stop.bus,
                         route_type='afternoon',
                         stop_name=self.bus_stop.stop_name
                     ).first()
-                    
+                    if corresponding_afternoon_stop and corresponding_afternoon_stop.stop_time:
+                        self.dropoff_time = corresponding_afternoon_stop.stop_time
+                    # Sync the corresponding afternoon assignment (use update to avoid recursive save)
                     if corresponding_afternoon_stop:
-                        # Set this assignment's dropoff_time from the afternoon stop's time
-                        if corresponding_afternoon_stop.stop_time:
-                            self.dropoff_time = corresponding_afternoon_stop.stop_time
-
-                        # Also update the corresponding afternoon assignment's pickup_time
-                        afternoon_assignment = BusStopStudent.objects.filter(
+                        from django.utils import timezone
+                        dropoff = corresponding_afternoon_stop.stop_time
+                        BusStopStudent.objects.filter(
                             bus_stop=corresponding_afternoon_stop,
                             student=self.student
-                        ).first()
-                        
-                        if afternoon_assignment:
-                            afternoon_assignment.dropoff_time = self.bus_stop.stop_time
-                            afternoon_assignment.save(update_fields=['dropoff_time', 'updated_at'])
+                        ).update(
+                            pickup_time=self.bus_stop.stop_time,
+                            dropoff_time=dropoff,
+                            updated_at=timezone.now(),
+                        )
                 except Exception:
-                    # Silently fail if there's any issue finding/updating afternoon stop
                     pass
-                    
             elif self.bus_stop.route_type == 'afternoon':
-                # For afternoon stops, set dropoff_time from stop's stop_time
-                if not self.dropoff_time:
-                    self.dropoff_time = self.bus_stop.stop_time
-                
-                # Also check if there's a corresponding morning stop with same stop_name
-                # and update its pickup_time if this student is assigned there
+                # Afternoon stop: dropoff = this stop's time, pickup = corresponding morning stop's time
+                self.dropoff_time = self.bus_stop.stop_time
                 try:
                     corresponding_morning_stop = BusStop.objects.filter(
                         bus=self.bus_stop.bus,
                         route_type='morning',
                         stop_name=self.bus_stop.stop_name
                     ).first()
-                    
+                    if corresponding_morning_stop and corresponding_morning_stop.stop_time:
+                        self.pickup_time = corresponding_morning_stop.stop_time
+                    # Sync the corresponding morning assignment (use update to avoid recursive save)
                     if corresponding_morning_stop:
-                        # Set this assignment's pickup_time from the morning stop's time
-                        if corresponding_morning_stop.stop_time:
-                            self.pickup_time = corresponding_morning_stop.stop_time
-
-                        # Also update the corresponding morning assignment's dropoff_time
-                        morning_assignment = BusStopStudent.objects.filter(
+                        from django.utils import timezone
+                        BusStopStudent.objects.filter(
                             bus_stop=corresponding_morning_stop,
                             student=self.student
-                        ).first()
-                        
-                        if morning_assignment:
-                            morning_assignment.pickup_time = self.bus_stop.stop_time
-                            morning_assignment.save(update_fields=['pickup_time', 'updated_at'])
+                        ).update(
+                            pickup_time=corresponding_morning_stop.stop_time,
+                            dropoff_time=self.bus_stop.stop_time,
+                            updated_at=timezone.now(),
+                        )
                 except Exception:
-                    # Silently fail if there's any issue finding/updating morning stop
                     pass
         
         super().save(*args, **kwargs)
@@ -1149,6 +1137,79 @@ class BusStopStudent(models.Model):
         verbose_name_plural = 'Bus Stop Students'
         ordering = ['bus_stop', 'student_name']
         unique_together = ['bus_stop', 'student']
+
+
+class BusStopAttendance(models.Model):
+    """Driver-recorded attendance (present/absent) per student per stop per date."""
+    STATUS_CHOICES = [
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    bus_stop_student = models.ForeignKey(
+        BusStopStudent,
+        on_delete=models.CASCADE,
+        related_name='attendance_records',
+        help_text='Bus stop student assignment'
+    )
+    attendance_date = models.DateField(help_text='Date of attendance')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='present')
+    # Denormalized from bus_stop_student for reporting/filtering
+    student_name = models.CharField(max_length=255, blank=True, help_text='Student name (from bus stop student)')
+    student_id = models.CharField(max_length=100, blank=True, db_index=True, help_text='Student ID (from bus stop student)')
+    school_id = models.CharField(max_length=100, blank=True, null=True, db_index=True, help_text='School ID (from bus stop student)')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        """Auto-populate student_name, student_id, school_id from bus_stop_student."""
+        if self.bus_stop_student_id:
+            bss = self.bus_stop_student
+            if not self.student_name:
+                self.student_name = bss.student_name or (bss.student.student_name if bss.student_id else '') or ''
+            if not self.student_id:
+                self.student_id = bss.student_id_string or (bss.student.student_id if bss.student_id else '') or ''
+            if self.school_id is None or self.school_id == '':
+                self.school_id = bss.school_id or ''
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = 'bus_stop_attendance'
+        verbose_name = 'Bus Stop Attendance'
+        verbose_name_plural = 'Bus Stop Attendances'
+        ordering = ['attendance_date', 'bus_stop_student']
+        unique_together = ['bus_stop_student', 'attendance_date']
+
+
+class Driver(models.Model):
+    """Links a User (with driver role) to an assigned Bus. One driver per bus."""
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='driver_profile',
+        primary_key=True,
+        help_text='User account with driver role'
+    )
+    bus = models.ForeignKey(
+        Bus,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_driver',
+        db_column='bus_number',
+        help_text='Assigned bus (null if not yet assigned)'
+    )
+    employee_id = models.CharField(max_length=100, blank=True, help_text='Driver employee ID')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'drivers'
+        verbose_name = 'Driver'
+        verbose_name_plural = 'Drivers'
+
+    def __str__(self):
+        return f"Driver({self.user.email})"
 
 
 class Event(models.Model):
@@ -1538,3 +1599,27 @@ class GalleryImage(models.Model):
         db_table = 'gallery_images'
         verbose_name = 'Gallery Image'
         verbose_name_plural = 'Gallery Images'
+
+
+class PushNotificationLog(models.Model):
+    """Log of push notifications sent from management to students/teachers."""
+    title = models.CharField(max_length=255)
+    body = models.TextField(blank=True)
+    audience = models.CharField(max_length=32)  # all_students, all_teachers, both
+    sent_count = models.PositiveIntegerField(default=0)
+    user_count = models.PositiveIntegerField(default=0)
+    school_id = models.CharField(max_length=100, db_index=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sent_push_notifications'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'push_notification_logs'
+        verbose_name = 'Push Notification Log'
+        verbose_name_plural = 'Push Notification Logs'
+        ordering = ['-created_at']

@@ -17,6 +17,7 @@ class _AddNewBusPageState extends State<AddNewBusPage> {
   final _capacityController = TextEditingController();
   final _registrationNumberController = TextEditingController();
   final _driverNameController = TextEditingController();
+  final _driverEmailController = TextEditingController();
   final _driverPhoneController = TextEditingController();
   final _driverLicenseController = TextEditingController();
   final _driverExperienceController = TextEditingController();
@@ -45,6 +46,7 @@ class _AddNewBusPageState extends State<AddNewBusPage> {
     _capacityController.dispose();
     _registrationNumberController.dispose();
     _driverNameController.dispose();
+    _driverEmailController.dispose();
     _driverPhoneController.dispose();
     _driverLicenseController.dispose();
     _driverExperienceController.dispose();
@@ -114,6 +116,9 @@ class _AddNewBusPageState extends State<AddNewBusPage> {
         'capacity': int.parse(_capacityController.text.trim()),
         'registration_number': _registrationNumberController.text.trim(),
         'driver_name': _driverNameController.text.trim(),
+        'driver_email': _driverEmailController.text.trim().isEmpty
+            ? ''
+            : _driverEmailController.text.trim(),
         'driver_phone': _driverPhoneController.text.trim(),
         'driver_license': _driverLicenseController.text.trim(),
         'driver_experience': _driverExperienceController.text.trim().isEmpty
@@ -186,6 +191,7 @@ class _AddNewBusPageState extends State<AddNewBusPage> {
               _PreviewItem('Registration',
                   _registrationNumberController.text),
               _PreviewItem('Driver Name', _driverNameController.text),
+              _PreviewItem('Driver Email (login)', _driverEmailController.text),
               _PreviewItem('Driver Phone', _driverPhoneController.text),
               _PreviewItem('License Number', _driverLicenseController.text),
               _PreviewItem('Experience',
@@ -725,6 +731,22 @@ class _AddNewBusPageState extends State<AddNewBusPage> {
                                     ),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 20),
+                              TextFormField(
+                                controller: _driverEmailController,
+                                decoration: InputDecoration(
+                                  labelText: 'Driver Email (login)',
+                                  hintText: 'Driver can log in with this email to see this bus',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  prefixIcon: const Icon(Icons.email),
+                                ),
+                                keyboardType: TextInputType.emailAddress,
+                                autocorrect: false,
                               ),
                               const SizedBox(height: 20),
                               Row(

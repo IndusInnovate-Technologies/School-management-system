@@ -8,8 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:path/path.dart' as p;
-// For web downloads
-import 'dart:html' as html; 
+import 'awards_download_stub.dart' if (dart.library.html) 'awards_download_web.dart' as download_helper;
 import 'main.dart' as app;
 import 'dashboard.dart';
 import 'package:core/api/api_service.dart';
@@ -2216,17 +2215,16 @@ class _AwardsManagementPageState extends State<AwardsManagementPage> {
       );
 
       if (response.statusCode == 200) {
-        // Handle web download
-        final blob = html.Blob([response.bodyBytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        final downloadUrl = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: downloadUrl)
-          ..setAttribute("download", "awards_import_template.xlsx")
-          ..click();
-        html.Url.revokeObjectUrl(downloadUrl);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Template download started'), backgroundColor: Colors.green),
+        await download_helper.downloadExcelFile(
+          response.bodyBytes,
+          'awards_import_template.xlsx',
+          context,
         );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Template download started'), backgroundColor: Colors.green),
+          );
+        }
       } else {
         throw Exception('Failed to download template: ${response.statusCode}');
       }

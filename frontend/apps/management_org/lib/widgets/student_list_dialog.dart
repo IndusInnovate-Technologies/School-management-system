@@ -169,8 +169,8 @@ class _StudentListDialogState extends State<StudentListDialog> {
                   ],
                 ),
                 content: Text(
-                  'The student with ID $studentId is already assigned to Bus Number: $assignedBusNumber\n\n'
-                  'Please remove the student from that bus first before assigning to this bus.',
+                  'The student is already assigned to "$assignedBusNumber". '
+                  'If you want to add that student remove from that "$assignedBusNumber" and add.',
                 ),
                 actions: [
                   TextButton(

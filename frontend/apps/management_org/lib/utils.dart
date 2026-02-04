@@ -32,3 +32,16 @@ String formatTimeWith24h(BuildContext context, dynamic time) {
   return '$formatted12h ($formatted24h)';
 }
 
+/// Format a 24h time string (e.g. "14:30:00" or "08:00") to 12h with AM/PM (e.g. "2:30 PM", "8:00 AM").
+String formatTime24To12h(String? timeStr) {
+  if (timeStr == null || timeStr.isEmpty) return '--';
+  final parts = timeStr.trim().split(':');
+  if (parts.isEmpty) return timeStr;
+  final hour = int.tryParse(parts[0]) ?? 0;
+  final minute = parts.length >= 2 ? (int.tryParse(parts[1]) ?? 0) : 0;
+  final period = hour >= 12 ? 'PM' : 'AM';
+  final hour12 = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+  final minStr = minute.toString().padLeft(2, '0');
+  return '$hour12:$minStr $period';
+}
+

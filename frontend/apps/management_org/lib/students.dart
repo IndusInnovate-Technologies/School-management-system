@@ -1114,7 +1114,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
             Icon(Icons.arrow_back, color: Colors.white, size: 18),
             SizedBox(width: 8),
             Text(
-              'Back',
+              'Back to Dashboard',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,

@@ -6,6 +6,7 @@ class BusDetails {
   final int capacity;
   final String registrationNumber;
   final String driverName;
+  final String driverEmail;
   final String driverPhone;
   final String driverLicense;
   final int? driverExperience;
@@ -32,6 +33,7 @@ class BusDetails {
     required this.capacity,
     required this.registrationNumber,
     required this.driverName,
+    required this.driverEmail,
     required this.driverPhone,
     required this.driverLicense,
     this.driverExperience,
@@ -81,6 +83,7 @@ class BusDetails {
       capacity: parseInt(json['capacity']) ?? 0,
       registrationNumber: json['registration_number']?.toString() ?? '',
       driverName: json['driver_name']?.toString() ?? '',
+      driverEmail: json['driver_email']?.toString() ?? '',
       driverPhone: json['driver_phone']?.toString() ?? '',
       driverLicense: json['driver_license']?.toString() ?? '',
       driverExperience: parseInt(json['driver_experience']),

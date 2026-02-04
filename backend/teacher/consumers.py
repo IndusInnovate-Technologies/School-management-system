@@ -158,6 +158,7 @@ class TeacherStudentChatConsumer(AsyncWebsocketConsumer):
         payload = {
             'type': 'message',
             'sender': event['sender'],
+            'sender_name': event.get('sender_name', event['sender']),
             'sender_username': event.get('sender_username', event['sender']),
             'sender_id': event.get('sender_id'),
             'message': event['message'],
@@ -166,6 +167,9 @@ class TeacherStudentChatConsumer(AsyncWebsocketConsumer):
             'message_id': event.get('message_id', ''),
             'attachment_url': event.get('attachment_url'),
             'attachment_name': event.get('attachment_name'),
+            'replied_to_id': event.get('replied_to_id'),
+            'replied_to_sender_name': event.get('replied_to_sender_name'),
+            'replied_to_text': event.get('replied_to_text'),
         }
         
         # Add group or recipient info
@@ -177,6 +181,44 @@ class TeacherStudentChatConsumer(AsyncWebsocketConsumer):
             payload['recipient_id'] = event.get('recipient_id', '')
         
         await self.send(text_data=json.dumps(payload))
+
+    async def chat_message_edited(self, event):
+        """Handle message edited broadcast"""
+        await self.send(text_data=json.dumps({
+            'type': 'message_edited',
+            'message_id': event['message_id'],
+            'message': event['message'],
+            'timestamp': event['timestamp'],
+            'sender_id': event['sender_id'],
+        }))
+
+    async def chat_message_deleted(self, event):
+        """Handle message deleted broadcast"""
+        await self.send(text_data=json.dumps({
+            'type': 'message_deleted',
+            'message_id': event['message_id'],
+            'sender_id': event['sender_id'],
+        }))
+
+    async def chat_messages_read(self, event):
+        """Handle read receipt broadcast (WhatsApp-like double tick) - notify sender that messages were read"""
+        payload = {
+            'type': 'chat.messages_read',
+            'read_by_user_id': event.get('read_by_user_id', ''),
+        }
+        if event.get('group_id'):
+            payload['group_id'] = event['group_id']
+        await self.send(text_data=json.dumps(payload))
+
+    async def chat_group_updated(self, event):
+        """Handle group name/members update so participants see changes (like WhatsApp)"""
+        await self.send(text_data=json.dumps({
+            'type': 'chat.group_updated',
+            'group_id': event.get('group_id', ''),
+            'group_name': event.get('group_name', ''),
+            'updated_type': event.get('updated_type', ''),
+            'member_ids': event.get('member_ids', []),
+        }))
 
     @database_sync_to_async
     def get_user_by_username(self, username_or_name):

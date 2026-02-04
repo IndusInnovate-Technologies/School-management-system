@@ -56,6 +56,7 @@ class _UnifiedBusFormDialogState extends State<UnifiedBusFormDialog> {
   final _capacityController = TextEditingController();
   final _registrationNumberController = TextEditingController();
   final _driverNameController = TextEditingController();
+  final _driverEmailController = TextEditingController();
   final _driverPhoneController = TextEditingController();
   final _driverLicenseController = TextEditingController();
   final _driverExperienceController = TextEditingController();
@@ -221,6 +222,7 @@ class _UnifiedBusFormDialogState extends State<UnifiedBusFormDialog> {
         _capacityController.text = (busData['capacity'] ?? '').toString();
         _registrationNumberController.text = busData['registration_number'] ?? '';
         _driverNameController.text = busData['driver_name'] ?? '';
+        _driverEmailController.text = busData['driver_email'] ?? '';
         _driverPhoneController.text = busData['driver_phone'] ?? '';
         _driverLicenseController.text = busData['driver_license'] ?? '';
         _driverExperienceController.text = (busData['driver_experience'] ?? '').toString();
@@ -533,6 +535,17 @@ class _UnifiedBusFormDialogState extends State<UnifiedBusFormDialog> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _driverEmailController,
+              decoration: const InputDecoration(
+                labelText: 'Driver Email (login)',
+                hintText: 'Driver can log in with this email to see this bus',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
             ),
             const SizedBox(height: 16),
             Row(
@@ -1306,8 +1319,8 @@ class _UnifiedBusFormDialogState extends State<UnifiedBusFormDialog> {
                                     ],
                                   ),
                                   content: Text(
-                                    'The student with ID $studentIdString is already assigned to Bus Number: $blockingBusNumber\n\n'
-                                    'Please remove the student from that bus first before assigning to this bus.',
+                                    'The student is already assigned to "$blockingBusNumber". '
+                                    'If you want to add that student remove from that "$blockingBusNumber" and add.',
                                   ),
                                   actions: [
                                     TextButton(
@@ -1495,7 +1508,8 @@ class _UnifiedBusFormDialogState extends State<UnifiedBusFormDialog> {
   
   bool _validateCurrentStep() {
     if (_currentStep == 0) {
-      if (!_formKey.currentState!.validate()) return false;
+      final formState = _formKey.currentState;
+      if (formState == null || !formState.validate()) return false;
       if (_morningStartTime == null ||
           _morningEndTime == null ||
           _afternoonStartTime == null ||
@@ -1512,7 +1526,8 @@ class _UnifiedBusFormDialogState extends State<UnifiedBusFormDialog> {
   }
   
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) return;
     
     if (_morningStartTime == null ||
         _morningEndTime == null ||
@@ -1736,6 +1751,9 @@ class _UnifiedBusFormDialogState extends State<UnifiedBusFormDialog> {
         'capacity': capacity,
         'registration_number': _registrationNumberController.text.trim(),
         'driver_name': _driverNameController.text.trim(),
+        'driver_email': _driverEmailController.text.trim().isEmpty
+            ? ''
+            : _driverEmailController.text.trim(),
         'driver_phone': _driverPhoneController.text.trim(),
         'driver_license': _driverLicenseController.text.trim(),
         'driver_experience': _driverExperienceController.text.trim().isEmpty
@@ -1881,26 +1899,25 @@ class _UnifiedBusFormDialogState extends State<UnifiedBusFormDialog> {
           }
       }
       
-      // 5. Assign Students to Stops
-        final assignedStudentIds = <String>{};
+      // 5. Assign Students to Stops (one BusStopStudent per stop per student — morning and afternoon)
       for (var stop in [..._morningStops, ..._afternoonStops]) {
         if (stop.stopId != null && stop.students.isNotEmpty) {
+          final assignedInThisStop = <String>{};
           for (var student in stop.students) {
-            final studentId = student['student_id_string']?.toString() ?? 
-                             student['id']?.toString() ?? '';
-            
-              if (studentId.isEmpty || assignedStudentIds.contains(studentId)) {
-              continue;
-            }
-            
+            final studentId = student['student_id_string']?.toString() ??
+                student['id']?.toString() ??
+                student['student_id']?.toString() ??
+                '';
+            if (studentId.isEmpty || assignedInThisStop.contains(studentId)) continue;
+
             try {
               final response = await _apiService.post(Endpoints.busStopStudents, body: {
                 'stop': stop.stopId,
                 'student_id': studentId,
               });
-              
+
               if (response.success) {
-                assignedStudentIds.add(studentId);
+                assignedInThisStop.add(studentId);
               } else {
                 // During form submission, just log the error - don't show popup
                 // The popup should only show when user is actively adding a student to a stop
